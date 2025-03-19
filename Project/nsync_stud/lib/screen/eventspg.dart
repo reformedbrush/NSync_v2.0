@@ -17,10 +17,8 @@ class _StuEventsState extends State<StuEvents> {
 
   // Sample event data
   List<Map<String, dynamic>> _posterNews = [];
-
-  final List<Map<String, dynamic>> _concertEvents = [];
-
-  //select
+  List<Map<String, dynamic>> _concertEvents = [];
+  bool _isLoading = true; // Add loading state
 
   Future<void> fetchEvent() async {
     try {
@@ -33,6 +31,10 @@ class _StuEventsState extends State<StuEvents> {
           'location': data['event_venue'] ?? "",
         });
       }
+      print(eventList);
+      setState(() {
+        _concertEvents = eventList;
+      });
     } catch (e) {
       print("ERROR FETCHING EVENTS: $e");
     }
@@ -59,9 +61,18 @@ class _StuEventsState extends State<StuEvents> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
-    fetchNews();
+    _loadData(); // Call a method to load data
+  }
+
+  Future<void> _loadData() async {
+    setState(() {
+      _isLoading = true; // Set loading to true
+    });
+    await Future.wait([fetchNews(), fetchEvent()]); // Wait for both to complete
+    setState(() {
+      _isLoading = false; // Set loading to false when done
+    });
   }
 
   @override
@@ -69,24 +80,22 @@ class _StuEventsState extends State<StuEvents> {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Header with user info
-              _buildHeader(),
-
-              // Location info
-              _buildLocationInfo(),
-
-              // Festival Music section with carousel
-              _buildFestivalSection(),
-
-              // Top Concerts section with ListView
-              _buildConcertsSection(),
-            ],
-          ),
-        ),
+        child:
+            _isLoading
+                ? const Center(
+                  child: CircularProgressIndicator(),
+                ) // Show loading
+                : SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildHeader(),
+                      _buildLocationInfo(),
+                      _buildFestivalSection(),
+                      _buildConcertsSection(),
+                    ],
+                  ),
+                ),
       ),
     );
   }
@@ -206,8 +215,6 @@ class _StuEventsState extends State<StuEvents> {
             ],
           ),
         ),
-
-        // Category filters
         SizedBox(
           height: 50,
           child: ListView.builder(
@@ -217,7 +224,6 @@ class _StuEventsState extends State<StuEvents> {
             itemBuilder: (context, index) {
               final category = _categories[index];
               final isSelected = category == _selectedCategory;
-
               return GestureDetector(
                 onTap: () {
                   setState(() {
@@ -245,60 +251,61 @@ class _StuEventsState extends State<StuEvents> {
             },
           ),
         ),
-
-        // Carousel slider
-        CarouselSlider.builder(
-          itemCount: _posterNews.length,
-          options: CarouselOptions(
-            height: 200,
-            aspectRatio: 16 / 9,
-            viewportFraction: 0.8,
-            initialPage: 0,
-            enableInfiniteScroll: true,
-            reverse: false,
-            autoPlay: true,
-            autoPlayInterval: const Duration(seconds: 3),
-            autoPlayAnimationDuration: const Duration(milliseconds: 800),
-            autoPlayCurve: Curves.fastOutSlowIn,
-            enlargeCenterPage: true,
-            onPageChanged: (index, reason) {
-              setState(() {
-                _currentCarouselIndex = index;
-              });
-            },
-            scrollDirection: Axis.horizontal,
+        _posterNews.isEmpty
+            ? const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text("No festival news available"),
+            )
+            : CarouselSlider.builder(
+              itemCount: _posterNews.length,
+              options: CarouselOptions(
+                height: 200,
+                aspectRatio: 16 / 9,
+                viewportFraction: 0.8,
+                initialPage: 0,
+                enableInfiniteScroll: true,
+                reverse: false,
+                autoPlay: true,
+                autoPlayInterval: const Duration(seconds: 3),
+                autoPlayAnimationDuration: const Duration(milliseconds: 800),
+                autoPlayCurve: Curves.fastOutSlowIn,
+                enlargeCenterPage: true,
+                onPageChanged: (index, reason) {
+                  setState(() {
+                    _currentCarouselIndex = index;
+                  });
+                },
+                scrollDirection: Axis.horizontal,
+              ),
+              itemBuilder: (BuildContext context, int index, int realIndex) {
+                final event = _posterNews[index];
+                return _buildPosterCard(event);
+              },
+            ),
+        if (_posterNews.isNotEmpty)
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children:
+                _posterNews.asMap().entries.map((entry) {
+                  return Container(
+                    width: 8.0,
+                    height: 8.0,
+                    margin: const EdgeInsets.symmetric(
+                      vertical: 8.0,
+                      horizontal: 4.0,
+                    ),
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: (Theme.of(context).brightness == Brightness.dark
+                              ? Colors.white
+                              : Colors.black)
+                          .withOpacity(
+                            _currentCarouselIndex == entry.key ? 0.9 : 0.4,
+                          ),
+                    ),
+                  );
+                }).toList(),
           ),
-          itemBuilder: (BuildContext context, int index, int realIndex) {
-            final event = _posterNews[index];
-            print(event);
-            return _buildPosterCard(event);
-          },
-        ),
-
-        // Carousel indicators
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children:
-              _posterNews.asMap().entries.map((entry) {
-                return Container(
-                  width: 8.0,
-                  height: 8.0,
-                  margin: const EdgeInsets.symmetric(
-                    vertical: 8.0,
-                    horizontal: 4.0,
-                  ),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: (Theme.of(context).brightness == Brightness.dark
-                            ? Colors.white
-                            : Colors.black)
-                        .withOpacity(
-                          _currentCarouselIndex == entry.key ? 0.9 : 0.4,
-                        ),
-                  ),
-                );
-              }).toList(),
-        ),
       ],
     );
   }
@@ -392,32 +399,21 @@ class _StuEventsState extends State<StuEvents> {
             ],
           ),
         ),
-
-        // ListView.builder for concert events
-        ListView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          padding: const EdgeInsets.symmetric(horizontal: 16),
-          itemCount: _concertEvents.length,
-          itemBuilder: (context, index) {
-            final event = _concertEvents[index];
-
-            // First two items use the new design
-            if (index < 2) {
-              return _buildConcertCard(event);
-            }
-            // Remaining items use the original EventCard design
-            else {
-              return EventCard(
-                date: event['date'],
-                title: event['title'],
-                location: event['location'],
-                distance: event['distance'] ?? '',
-                price: event['price'],
-              );
-            }
-          },
-        ),
+        _concertEvents.isEmpty
+            ? const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text("No concerts available"),
+            )
+            : ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: _concertEvents.length,
+              itemBuilder: (context, index) {
+                final event = _concertEvents[index];
+                return _buildConcertCard(event);
+              },
+            ),
       ],
     );
   }
@@ -427,24 +423,17 @@ class _StuEventsState extends State<StuEvents> {
       margin: const EdgeInsets.only(bottom: 15),
       child: Row(
         children: [
-          // Event image
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              event['image'],
-              width: 80,
-              height: 80,
-              fit: BoxFit.cover,
-            ),
-          ),
-          const SizedBox(width: 15),
           // Event details
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  event['date'],
+                  event['date'] != null
+                      ? DateFormat(
+                        'dd-MM-yyyy',
+                      ).format(DateTime.parse(event['date']))
+                      : 'No date',
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
                 const SizedBox(height: 5),
@@ -460,22 +449,6 @@ class _StuEventsState extends State<StuEvents> {
                   event['location'],
                   style: TextStyle(color: Colors.grey[600], fontSize: 12),
                 ),
-                const SizedBox(height: 5),
-                Row(
-                  children: [
-                    Text(
-                      'Starting ',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                    Text(
-                      event['price'],
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
               ],
             ),
           ),
@@ -486,14 +459,12 @@ class _StuEventsState extends State<StuEvents> {
 }
 
 class EventCard extends StatelessWidget {
-  final String date, title, location, distance, price;
+  final String date, title, location;
   const EventCard({
     super.key,
     required this.date,
     required this.title,
     required this.location,
-    required this.distance,
-    required this.price,
   });
 
   @override
@@ -519,14 +490,8 @@ class EventCard extends StatelessWidget {
                 children: [
                   Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
                   Text(location, style: TextStyle(color: Colors.grey)),
-                  Text(distance, style: TextStyle(color: Colors.grey)),
                 ],
               ),
-            ),
-            ElevatedButton(
-              onPressed: () {},
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-              child: Text(price),
             ),
           ],
         ),
