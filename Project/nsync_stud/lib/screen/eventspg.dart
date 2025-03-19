@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:nsync_stud/main.dart';
+import 'package:intl/intl.dart';
 
 class StuEvents extends StatefulWidget {
   const StuEvents({super.key});
@@ -14,52 +15,24 @@ class _StuEventsState extends State<StuEvents> {
   final List<String> _categories = ['All', 'Department', 'Club', 'Sport'];
   String _selectedCategory = 'All';
 
-  List<Map<String, dynamic>> eventList = [];
-
   // Sample event data
   List<Map<String, dynamic>> _posterNews = [];
 
-  final List<Map<String, dynamic>> _concertEvents = [
-    {
-      'date': '14 Apr, 2023',
-      'title': 'Symphony of Sound',
-      'location': 'Grand Park, New York City, US',
-      'price': '\$20.00',
-      'image':
-          'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-19%20104737-vA2GAIgj2pAsLCUjNHQf9nF69INIph.png', // Replace with actual image URLs
-    },
-    {
-      'date': '14 Apr, 2023',
-      'title': 'Symphony of Sound',
-      'location': 'Grand Park, New York City, US',
-      'price': '\$25.00',
-      'image':
-          'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-19%20104737-vA2GAIgj2pAsLCUjNHQf9nF69INIph.png', // Replace with actual image URLs
-    },
-    {
-      'date': 'DEC 28',
-      'title': 'Black Laughs Matter Virtual Comedy Show live',
-      'location': 'By Funcheap',
-      'distance': '10.6 km away',
-      'price': '\$30',
-    },
-    {
-      'date': 'DEC 28',
-      'title': 'Save A Seat For Sam Christmas Special',
-      'location': 'By Funcheap',
-      'distance': '8.2 km away',
-      'price': 'Free',
-    },
-  ];
+  final List<Map<String, dynamic>> _concertEvents = [];
 
   //select
 
   Future<void> fetchEvent() async {
     try {
       final response = await supabase.from('tbl_events').select();
-      setState(() {
-        eventList = response;
-      });
+      List<Map<String, dynamic>> eventList = [];
+      for (var data in response) {
+        eventList.add({
+          'title': data['event_name'] ?? "",
+          'date': data['created_at'] ?? "",
+          'location': data['event_venue'] ?? "",
+        });
+      }
     } catch (e) {
       print("ERROR FETCHING EVENTS: $e");
     }
@@ -71,9 +44,9 @@ class _StuEventsState extends State<StuEvents> {
       List<Map<String, dynamic>> newsList = [];
       for (var data in response) {
         newsList.add({
-          'title': data['newsletter_title'],
-          'image': data['newsletter_image'],
-          'date': data['created_at'],
+          'title': data['newsletter_title'] ?? "",
+          'image': data['newsletter_image'] ?? "",
+          'date': data['created_at'] ?? "",
         });
       }
       setState(() {
@@ -297,6 +270,7 @@ class _StuEventsState extends State<StuEvents> {
           ),
           itemBuilder: (BuildContext context, int index, int realIndex) {
             final event = _posterNews[index];
+            print(event);
             return _buildPosterCard(event);
           },
         ),
@@ -335,7 +309,7 @@ class _StuEventsState extends State<StuEvents> {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
         image: DecorationImage(
-          image: NetworkImage(event['image']),
+          image: NetworkImage(event['image'] ?? ""),
           fit: BoxFit.cover,
         ),
       ),
@@ -380,11 +354,11 @@ class _StuEventsState extends State<StuEvents> {
                     ),
                   ),
                   Text(
-                    event['location'],
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                  ),
-                  Text(
-                    event['date'],
+                    event['date'] != null
+                        ? DateFormat(
+                          'dd-MM-yyyy',
+                        ).format(DateTime.parse(event['date']))
+                        : 'No date',
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
                 ],
