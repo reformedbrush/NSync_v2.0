@@ -15,25 +15,9 @@ class _StuEventsState extends State<StuEvents> {
   String _selectedCategory = 'All';
 
   List<Map<String, dynamic>> eventList = [];
-  List<Map<String, dynamic>> newsList = [];
 
   // Sample event data
-  final List<Map<String, dynamic>> _posterEvents = [
-    {
-      'title': 'A Celebration of Music',
-      'location': 'Grand Park, New York City, US',
-      'date': '14 Apr, 2023',
-      'image':
-          'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-19%20104737-vA2GAIgj2pAsLCUjNHQf9nF69INIph.png', // Replace with actual image URLs
-    },
-    {
-      'title': 'Symphony of Sound',
-      'location': 'Grand Park, New York City, US',
-      'date': '14 Apr, 2023',
-      'image':
-          'https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Screenshot%202025-03-19%20104737-vA2GAIgj2pAsLCUjNHQf9nF69INIph.png', // Replace with actual image URLs
-    },
-  ];
+  List<Map<String, dynamic>> _posterNews = [];
 
   final List<Map<String, dynamic>> _concertEvents = [
     {
@@ -84,12 +68,27 @@ class _StuEventsState extends State<StuEvents> {
   Future<void> fetchNews() async {
     try {
       final response = await supabase.from('tbl_newsletter').select();
+      List<Map<String, dynamic>> newsList = [];
+      for (var data in response) {
+        newsList.add({
+          'title': data['newsletter_title'],
+          'image': data['newsletter_image'],
+          'date': data['created_at'],
+        });
+      }
       setState(() {
-        newsList = response;
+        _posterNews = newsList;
       });
     } catch (e) {
       print("ERROR FETCHING NEWS: $e");
     }
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    fetchNews();
   }
 
   @override
@@ -276,7 +275,7 @@ class _StuEventsState extends State<StuEvents> {
 
         // Carousel slider
         CarouselSlider.builder(
-          itemCount: _posterEvents.length,
+          itemCount: _posterNews.length,
           options: CarouselOptions(
             height: 200,
             aspectRatio: 16 / 9,
@@ -297,7 +296,7 @@ class _StuEventsState extends State<StuEvents> {
             scrollDirection: Axis.horizontal,
           ),
           itemBuilder: (BuildContext context, int index, int realIndex) {
-            final event = _posterEvents[index];
+            final event = _posterNews[index];
             return _buildPosterCard(event);
           },
         ),
@@ -306,7 +305,7 @@ class _StuEventsState extends State<StuEvents> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children:
-              _posterEvents.asMap().entries.map((entry) {
+              _posterNews.asMap().entries.map((entry) {
                 return Container(
                   width: 8.0,
                   height: 8.0,
