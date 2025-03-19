@@ -18,10 +18,7 @@ class _StudentHomeState extends State<StudentHome> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: myIndex,
-        children: pages,
-      ),
+      body: IndexedStack(index: myIndex, children: pages),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: myIndex,
         onTap: (index) {
@@ -29,10 +26,17 @@ class _StudentHomeState extends State<StudentHome> {
             myIndex = index;
           });
         },
+        type: BottomNavigationBarType.fixed,
+        selectedItemColor: Colors.teal,
+        unselectedItemColor: Colors.grey,
         items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Events"),
-          BottomNavigationBarItem(icon: Icon(Icons.ad_units), label: "Club"),
-          BottomNavigationBarItem(icon: Icon(Icons.person), label: "Profile"),
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(icon: Icon(Icons.sports), label: 'Clubs'),
+
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: 'Profile',
+          ),
         ],
       ),
     );
