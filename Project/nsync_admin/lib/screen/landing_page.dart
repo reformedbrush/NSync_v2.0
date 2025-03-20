@@ -1,7 +1,35 @@
 import 'package:flutter/material.dart';
+import 'package:nsync_admin/main.dart';
 
-class LandingScreen extends StatelessWidget {
+class LandingScreen extends StatefulWidget {
   const LandingScreen({super.key});
+
+  @override
+  State<LandingScreen> createState() => _LandingScreenState();
+}
+
+class _LandingScreenState extends State<LandingScreen> {
+  List<Map<String, dynamic>> eventList = [];
+
+  // select
+  Future<void> fetchEvents() async {
+    try {
+      final response = await supabase
+          .from('tbl_events')
+          .select()
+          .eq("event_status", 1);
+      setState(() {
+        eventList = response;
+      });
+    } catch (e) {}
+  }
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    fetchEvents();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -11,11 +39,13 @@ class LandingScreen extends StatelessWidget {
         children: [
           Container(
             decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                gradient: LinearGradient(
-                    colors: [const Color(0xFF1F4037), Color(0xFF99F2C8)],
-                    begin: Alignment.centerRight,
-                    end: Alignment.centerLeft)),
+              borderRadius: BorderRadius.circular(10),
+              gradient: LinearGradient(
+                colors: [const Color(0xFF1F4037), Color(0xFF99F2C8)],
+                begin: Alignment.centerRight,
+                end: Alignment.centerLeft,
+              ),
+            ),
             width: 1250,
             height: 90,
             child: Padding(
@@ -23,15 +53,14 @@ class LandingScreen extends StatelessWidget {
               child: Text(
                 "Welcome Admin",
                 style: TextStyle(
-                    color: Color(0xFF1F4037),
-                    fontSize: 25,
-                    fontWeight: FontWeight.w900),
+                  color: Color(0xFF1F4037),
+                  fontSize: 25,
+                  fontWeight: FontWeight.w900,
+                ),
               ),
             ),
           ),
-          SizedBox(
-            width: 10,
-          ),
+          SizedBox(width: 10),
           Padding(
             padding: const EdgeInsets.all(10.0),
             child: Row(
@@ -46,7 +75,73 @@ class LandingScreen extends StatelessWidget {
                     ),
                     width: 700,
                     height: 500,
-                    child: Text("Events Details"),
+                    child: Column(
+                      children: [
+                        Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              "Upcoming Events",
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                        ListView.builder(
+                          physics: NeverScrollableScrollPhysics(),
+                          shrinkWrap: true,
+                          itemCount: eventList.length,
+                          itemBuilder: (context, index) {
+                            final event = eventList[index];
+                            return Padding(
+                              padding: const EdgeInsets.all(6.0),
+                              child: (Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                padding: EdgeInsets.all(10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    /* Image.asset(event                        ), */
+                                    Padding(
+                                      padding: const EdgeInsets.all(5.0),
+                                      child: Text(
+                                        event['event_name'],
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 5.0,
+                                      ),
+                                      child: Text(
+                                        event['event_venue'],
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(5.0),
+                                      child: Text(
+                                        event['event_details'],
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 Container(
@@ -57,7 +152,7 @@ class LandingScreen extends StatelessWidget {
                   height: 500,
                   width: 530,
                   child: Text("Other"),
-                )
+                ),
               ],
             ),
           ),
@@ -69,7 +164,7 @@ class LandingScreen extends StatelessWidget {
             height: 500,
             width: 500,
             child: Text("data"),
-          )
+          ),
         ],
       ),
     );
