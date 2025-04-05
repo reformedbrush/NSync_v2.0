@@ -104,47 +104,68 @@ class _LandingScreenState extends State<LandingScreen> {
                               final event = eventList[index];
                               return Padding(
                                 padding: const EdgeInsets.all(6.0),
-                                child: (Container(
+                                child: Container(
                                   decoration: BoxDecoration(
                                     color: Colors.white,
                                     borderRadius: BorderRadius.circular(10),
                                   ),
                                   padding: EdgeInsets.all(10),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                  child: Row(
                                     children: [
-                                      /* Image.asset(event                        ), */
-                                      Padding(
-                                        padding: const EdgeInsets.all(5.0),
+                                      Container(
+                                        padding: EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: const Color(0xffeeeeeee),
+                                          borderRadius: BorderRadius.circular(
+                                            8,
+                                          ),
+                                        ),
                                         child: Text(
-                                          event['event_name'],
-                                          style: const TextStyle(
+                                          event['event_fordate'] ?? 'No date',
+                                          style: TextStyle(
                                             fontWeight: FontWeight.bold,
+                                            fontSize: 14,
                                           ),
                                         ),
                                       ),
-                                      Padding(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 5.0,
-                                        ),
-                                        child: Text(
-                                          event['event_venue'],
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
-                                        ),
-                                      ),
-                                      Padding(
-                                        padding: const EdgeInsets.all(5.0),
-                                        child: Text(
-                                          event['event_details'],
-                                          maxLines: 2,
-                                          overflow: TextOverflow.ellipsis,
+                                      SizedBox(width: 24),
+
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              event['event_name'],
+                                              style: const TextStyle(
+                                                fontWeight: FontWeight.bold,
+                                                fontSize: 16,
+                                              ),
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              event['event_venue'],
+                                              style: TextStyle(
+                                                color: Colors.grey[700],
+                                                fontSize: 14,
+                                              ),
+                                            ),
+                                            SizedBox(height: 4),
+                                            Text(
+                                              event['event_details'],
+                                              maxLines: 2,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: TextStyle(
+                                                color: Colors.grey[600],
+                                                fontSize: 13,
+                                              ),
+                                            ),
+                                          ],
                                         ),
                                       ),
                                     ],
                                   ),
-                                )),
+                                ),
                               );
                             },
                           ),
@@ -207,6 +228,24 @@ class _LandingScreenState extends State<LandingScreen> {
                               ),
                             ],
                           ),
+                          SizedBox(height: 16),
+                          Row(
+                            children: [
+                              _buildStatCard(
+                                "Student RSVPs",
+                                "234",
+                                Icons.people,
+                                Colors.teal,
+                              ),
+                              SizedBox(width: 16),
+                              _buildStatCard(
+                                "Faculty Hosts",
+                                "18",
+                                Icons.school,
+                                Colors.indigo,
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -244,7 +283,20 @@ class _LandingScreenState extends State<LandingScreen> {
                                 gridData: FlGridData(show: true),
                                 titlesData: FlTitlesData(
                                   leftTitles: AxisTitles(
-                                    sideTitles: SideTitles(showTitles: true),
+                                    sideTitles: SideTitles(
+                                      showTitles: true,
+                                      reservedSize:
+                                          20, // Add fixed width for left axis
+                                      interval:
+                                          5, // Add interval to space out numbers
+                                      getTitlesWidget: (value, meta) {
+                                        return Text(
+                                          value.toInt().toString(),
+                                          textAlign: TextAlign.right,
+                                          style: const TextStyle(fontSize: 12),
+                                        );
+                                      },
+                                    ),
                                   ),
                                   bottomTitles: AxisTitles(
                                     sideTitles: SideTitles(showTitles: true),
@@ -274,7 +326,7 @@ class _LandingScreenState extends State<LandingScreen> {
                                       FlSpot(4, 78),
                                     ],
                                     isCurved: true,
-                                    color: Colors.orange,
+                                    color: Colors.pink,
                                     barWidth: 3,
                                     dotData: FlDotData(show: true),
                                   ),
@@ -288,7 +340,7 @@ class _LandingScreenState extends State<LandingScreen> {
                             children: [
                               _buildLegendItem("Attendance", Colors.blue),
                               SizedBox(width: 20),
-                              _buildLegendItem("Venue Usage", Colors.orange),
+                              _buildLegendItem("Venue Usage", Colors.pink),
                             ],
                           ),
                         ],

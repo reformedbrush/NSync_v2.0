@@ -84,31 +84,55 @@ class _MyDepartmentState extends State<MyDepartment> {
                       borderRadius: BorderRadius.circular(10),
                     ),
                     padding: EdgeInsets.all(10),
-                    child: Column(
+                    child: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        /* Image.asset(event                        ), */
-                        Padding(
-                          padding: const EdgeInsets.all(5.0),
+                        Container(
+                          padding: EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color.fromARGB(253, 255, 255, 255),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
                           child: Text(
-                            event['event_name'],
-                            style: const TextStyle(fontWeight: FontWeight.bold),
+                            event['event_fordate'] ?? 'No date',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 5.0),
-                          child: Text(
-                            event['event_venue'],
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(5.0),
-                          child: Text(
-                            event['event_details'],
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
+                        SizedBox(width: 24),
+
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                event['event_name'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                event['event_venue'],
+                                style: TextStyle(
+                                  color: Colors.grey[700],
+                                  fontSize: 14,
+                                ),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                event['event_details'],
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: Colors.grey[600],
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
