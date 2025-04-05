@@ -472,25 +472,6 @@ class _LandingScreenState extends State<LandingScreen> {
     );
   }
 
-  Widget _buildBar(double percentage, String label) {
-    return Expanded(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.end,
-        children: [
-          Container(
-            height: 300 * (percentage / 100),
-            decoration: BoxDecoration(
-              color: Colors.blue,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(4)),
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(label, style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-        ],
-      ),
-    );
-  }
-
   Widget _buildLegendItem(String label, Color color) {
     return Row(
       children: [
