@@ -1,3 +1,7 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:nsync_admin/components/form_validation.dart';
 import 'package:nsync_admin/main.dart';
@@ -31,7 +35,9 @@ class _ManageStudentsState extends State<ManageStudents>
   Future<void> Register() async {
     try {
       final auth = await supabase.auth.signUp(
-          password: _stPasswordController.text, email: _stEmailController.text);
+        password: _stPasswordController.text,
+        email: _stEmailController.text,
+      );
       final uid = auth.user!.id;
       if (uid.isNotEmpty || uid != "") {
         studentInsert(uid);
@@ -51,15 +57,18 @@ class _ManageStudentsState extends State<ManageStudents>
       String Password = _stPasswordController.text;
       String Phone = _stContactController.text;
       String academicYear = _stAcdYearController.text;
+      String? url = await photoUpload(id);
 
       if (selectedDept == null) {
-        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-            "Please Select A Department",
-            style: TextStyle(color: Colors.white),
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Please Select A Department",
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
           ),
-          backgroundColor: Colors.red,
-        ));
+        );
         return;
       }
       await supabase.from('tbl_student').insert({
@@ -70,15 +79,18 @@ class _ManageStudentsState extends State<ManageStudents>
         'student_password': Password,
         'student_contact': Phone,
         'department_id': selectedDept,
-        'academic_year': academicYear
+        'academic_year': academicYear,
+        'student_photo': url,
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text(
-          "Student Data Inserted Sucessfully",
-          style: TextStyle(color: Colors.white),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Student Data Inserted Sucessfully",
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.green,
         ),
-        backgroundColor: Colors.green,
-      ));
+      );
 
       fetchStudent();
 
@@ -113,8 +125,9 @@ class _ManageStudentsState extends State<ManageStudents>
 
   Future<void> fetchStudent() async {
     try {
-      final response =
-          await supabase.from('tbl_student').select('*,tbl_department(*)');
+      final response = await supabase
+          .from('tbl_student')
+          .select('*,tbl_department(*)');
       setState(() {
         StudList = response;
       });
@@ -131,6 +144,38 @@ class _ManageStudentsState extends State<ManageStudents>
       fetchStudent();
     } catch (e) {
       print("ERROR DELETING: $e");
+    }
+  }
+
+  // file upload
+
+  PlatformFile? pickedImage;
+
+  Future<void> handleImagePick() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      allowMultiple: false,
+    );
+    if (result != null) {
+      setState(() {
+        pickedImage = result.files.first;
+      });
+    }
+  }
+
+  Future<String?> photoUpload(String uid) async {
+    try {
+      final bucketName = 'Student';
+      final filePath = "$uid-${pickedImage!.name}";
+      await supabase.storage
+          .from(bucketName)
+          .uploadBinary(filePath, pickedImage!.bytes!);
+      final publicUrl = supabase.storage
+          .from(bucketName)
+          .getPublicUrl(filePath);
+      return publicUrl;
+    } catch (e) {
+      print("ERROR PHOTO UPLOAD: $e");
+      return null;
     }
   }
 
@@ -159,11 +204,15 @@ class _ManageStudentsState extends State<ManageStudents>
                     padding: const EdgeInsets.all(10.0),
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: Color(0xFF161616),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(5)),
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 25, vertical: 18)),
+                        backgroundColor: Color(0xFF161616),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 25,
+                          vertical: 18,
+                        ),
+                      ),
                       onPressed: () {
                         setState(() {
                           _isFormVisible =
@@ -179,215 +228,341 @@ class _ManageStudentsState extends State<ManageStudents>
                         color: Colors.white,
                       ),
                     ),
-                  )
+                  ),
                 ],
               ),
               AnimatedSize(
                 duration: _animationDuration,
                 curve: Curves.easeInOut,
-                child: _isFormVisible
-                    ? Form(
-                        child: SizedBox(
-                        width: 700,
-                        child: Column(
-                          children: [
-                            Row(
+                child:
+                    _isFormVisible
+                        ? Form(
+                          child: SizedBox(
+                            width: 700,
+                            child: Column(
                               children: [
-                                Expanded(
-                                    child: Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: TextFormField(
-                                    controller: _studentController,
-                                    validator: (value) =>
-                                        FormValidation.validateName(value),
-                                    decoration: InputDecoration(
-                                        hintText: "Name",
-                                        enabledBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.grey)),
-                                        focusedBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.blue)),
-                                        errorBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.blue)),
-                                        focusedErrorBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.blue))),
-                                  ),
-                                )),
-                                Expanded(
-                                    child: Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: TextFormField(
-                                    controller: _stAdmnoController,
-                                    decoration: InputDecoration(
-                                        hintText: "Admission_No",
-                                        enabledBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.grey)),
-                                        focusedBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.blue))),
-                                  ),
-                                ))
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                Expanded(
-                                    child: Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: TextFormField(
-                                    controller: _stEmailController,
-                                    validator: (value) =>
-                                        FormValidation.validateEmail(value),
-                                    decoration: InputDecoration(
-                                        hintText: "Email",
-                                        enabledBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.grey)),
-                                        focusedBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.blue)),
-                                        errorBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.blue)),
-                                        focusedErrorBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.blue))),
-                                  ),
-                                )),
-                                Expanded(
-                                  child: Padding(
-                                    padding: EdgeInsets.all(8),
-                                    child: TextFormField(
-                                      controller: _stPasswordController,
-                                      validator: (value) =>
-                                          FormValidation.validatePassword(
-                                              value),
-                                      decoration: InputDecoration(
-                                          hintText: "Password",
-                                          enabledBorder: OutlineInputBorder(
-                                              borderSide: BorderSide(
-                                                  color: Colors.grey)),
-                                          focusedBorder: OutlineInputBorder(
-                                              borderSide: BorderSide(
-                                                  color: Colors.blue)),
-                                          errorBorder: OutlineInputBorder(
-                                              borderSide: BorderSide(
-                                                  color: Colors.blue)),
-                                          focusedErrorBorder:
-                                              OutlineInputBorder(
-                                                  borderSide: BorderSide(
-                                                      color: Colors.blue))),
+                                Row(
+                                  children: [
+                                    SizedBox(
+                                      height: 120,
+                                      width: 120,
+                                      child:
+                                          pickedImage == null
+                                              ? GestureDetector(
+                                                onTap: handleImagePick,
+                                                child: Icon(
+                                                  Icons.add_a_photo,
+                                                  color: Colors.blue,
+                                                  size: 50,
+                                                ),
+                                              )
+                                              : GestureDetector(
+                                                onTap: handleImagePick,
+                                                child: ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        100,
+                                                      ),
+                                                  child:
+                                                      pickedImage!.bytes != null
+                                                          ? Image.memory(
+                                                            Uint8List.fromList(
+                                                              pickedImage!
+                                                                  .bytes!,
+                                                            ),
+                                                            fit: BoxFit.cover,
+                                                          )
+                                                          : Image.file(
+                                                            File(
+                                                              pickedImage!
+                                                                  .path!,
+                                                            ),
+                                                            fit: BoxFit.cover,
+                                                          ),
+                                                ),
+                                              ),
                                     ),
-                                  ),
-                                )
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                Expanded(
-                                    child: Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: TextFormField(
-                                    validator: (value) =>
-                                        FormValidation.validateContact(value),
-                                    controller: _stContactController,
-                                    decoration: InputDecoration(
-                                        hintText: "Phone",
-                                        enabledBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.grey)),
-                                        focusedBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.blue)),
-                                        errorBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.blue)),
-                                        focusedErrorBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.blue))),
-                                  ),
-                                )),
-                                Expanded(
-                                    child: Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: TextFormField(
-                                    controller: _stAcdYearController,
-                                    decoration: InputDecoration(
-                                        hintText: "Academic_Year",
-                                        enabledBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.grey)),
-                                        focusedBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.blue)),
-                                        errorBorder: OutlineInputBorder(
-                                            borderSide:
-                                                BorderSide(color: Colors.blue)),
-                                        focusedErrorBorder: OutlineInputBorder(
-                                            borderSide: BorderSide(
-                                                color: Colors.blue))),
-                                  ),
-                                )),
-                              ],
-                            ),
-                            Row(
-                              children: [
-                                Expanded(
-                                    child: Padding(
-                                  padding: EdgeInsets.all(8),
-                                  child: DropdownButtonFormField<String>(
-                                      validator: (value) =>
-                                          FormValidation.validateDropdown(
-                                              value),
-                                      value: selectedDept,
-                                      hint: const Text("Select Department"),
-                                      items: DeptList.map((department) {
-                                        return DropdownMenuItem(
-                                            value: department['department_id']
-                                                .toString(),
-                                            child: Text(
-                                                department['department_name']));
-                                      }).toList(),
-                                      onChanged: (newValue) {
-                                        setState(() {
-                                          selectedDept = newValue;
-                                        });
-                                      }),
-                                ))
-                              ],
-                            ),
-                            ElevatedButton(
-                                style: ElevatedButton.styleFrom(
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: TextFormField(
+                                          controller: _studentController,
+                                          validator:
+                                              (value) =>
+                                                  FormValidation.validateName(
+                                                    value,
+                                                  ),
+                                          decoration: InputDecoration(
+                                            hintText: "Name",
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                            focusedErrorBorder:
+                                                OutlineInputBorder(
+                                                  borderSide: BorderSide(
+                                                    color: Colors.blue,
+                                                  ),
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: TextFormField(
+                                          controller: _stAdmnoController,
+                                          decoration: InputDecoration(
+                                            hintText: "Admission_No",
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: TextFormField(
+                                          controller: _stEmailController,
+                                          validator:
+                                              (value) =>
+                                                  FormValidation.validateEmail(
+                                                    value,
+                                                  ),
+                                          decoration: InputDecoration(
+                                            hintText: "Email",
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                            focusedErrorBorder:
+                                                OutlineInputBorder(
+                                                  borderSide: BorderSide(
+                                                    color: Colors.blue,
+                                                  ),
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: TextFormField(
+                                          controller: _stPasswordController,
+                                          validator:
+                                              (value) =>
+                                                  FormValidation.validatePassword(
+                                                    value,
+                                                  ),
+                                          decoration: InputDecoration(
+                                            hintText: "Password",
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                            focusedErrorBorder:
+                                                OutlineInputBorder(
+                                                  borderSide: BorderSide(
+                                                    color: Colors.blue,
+                                                  ),
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: TextFormField(
+                                          validator:
+                                              (value) =>
+                                                  FormValidation.validateContact(
+                                                    value,
+                                                  ),
+                                          controller: _stContactController,
+                                          decoration: InputDecoration(
+                                            hintText: "Phone",
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                            focusedErrorBorder:
+                                                OutlineInputBorder(
+                                                  borderSide: BorderSide(
+                                                    color: Colors.blue,
+                                                  ),
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    Expanded(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: TextFormField(
+                                          controller: _stAcdYearController,
+                                          decoration: InputDecoration(
+                                            hintText: "Academic_Year",
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                            focusedErrorBorder:
+                                                OutlineInputBorder(
+                                                  borderSide: BorderSide(
+                                                    color: Colors.blue,
+                                                  ),
+                                                ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(8),
+                                        child: DropdownButtonFormField<String>(
+                                          validator:
+                                              (value) =>
+                                                  FormValidation.validateDropdown(
+                                                    value,
+                                                  ),
+                                          value: selectedDept,
+                                          hint: const Text("Select Department"),
+                                          items:
+                                              DeptList.map((department) {
+                                                return DropdownMenuItem(
+                                                  value:
+                                                      department['department_id']
+                                                          .toString(),
+                                                  child: Text(
+                                                    department['department_name'],
+                                                  ),
+                                                );
+                                              }).toList(),
+                                          onChanged: (newValue) {
+                                            setState(() {
+                                              selectedDept = newValue;
+                                            });
+                                          },
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
                                     backgroundColor: Color(0xFF017AFF),
                                     padding: EdgeInsets.symmetric(
-                                        horizontal: 70, vertical: 22),
+                                      horizontal: 70,
+                                      vertical: 22,
+                                    ),
                                     shape: RoundedRectangleBorder(
-                                        borderRadius:
-                                            BorderRadius.circular(5))),
-                                onPressed: () {
-                                  Register();
-                                },
-                                child: Text(
-                                  "Insert",
-                                  style: TextStyle(color: Colors.white),
-                                )),
-                            SizedBox(
-                              height: 20,
-                            )
-                          ],
-                        ),
-                      ))
-                    : Container(),
+                                      borderRadius: BorderRadius.circular(5),
+                                    ),
+                                  ),
+                                  onPressed: () {
+                                    Register();
+                                  },
+                                  child: Text(
+                                    "Insert",
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                                SizedBox(height: 20),
+                              ],
+                            ),
+                          ),
+                        )
+                        : Container(),
               ),
               Container(
                 child: Center(
-                  child: Text("Students Data",
-                      style:
-                          TextStyle(fontWeight: FontWeight.bold, fontSize: 30)),
+                  child: Text(
+                    "Students Data",
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+                  ),
                 ),
               ),
               Container(
@@ -406,33 +581,50 @@ class _ManageStudentsState extends State<ManageStudents>
 
                       /*                   DataColumn(label: Text('Photo')),
          */
-                      DataColumn(label: Text("Delete"))
+                      DataColumn(label: Text("Delete")),
                     ],
-                    rows: StudList.asMap().entries.map((entry) {
-                      print(entry.value);
-                      return DataRow(cells: [
-                        DataCell(Text((entry.key + 1000).toString())),
-                        DataCell(Text(entry.value['student_name'])),
-                        DataCell(Text(entry.value['student_admno'].toString())),
-                        DataCell(Text(entry.value['student_email'])),
-                        DataCell(Text(entry.value['student_password'])),
-                        DataCell(
-                            Text(entry.value['student_contact'].toString())),
-                        DataCell(Text(
-                            entry.value['tbl_department']['department_name'])),
-                        DataCell(Text(entry.value['academic_year'])),
-                        DataCell(IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            //delete function
-                            deltStudent(entry.value['student_id'].toString());
-                          },
-                        )),
-                      ]);
-                    }).toList(),
+                    rows:
+                        StudList.asMap().entries.map((entry) {
+                          print(entry.value);
+                          return DataRow(
+                            cells: [
+                              DataCell(Text((entry.key + 1000).toString())),
+                              DataCell(Text(entry.value['student_name'])),
+                              DataCell(
+                                Text(entry.value['student_admno'].toString()),
+                              ),
+                              DataCell(Text(entry.value['student_email'])),
+                              DataCell(Text(entry.value['student_password'])),
+                              DataCell(
+                                Text(entry.value['student_contact'].toString()),
+                              ),
+                              DataCell(
+                                Text(
+                                  entry
+                                      .value['tbl_department']['department_name'],
+                                ),
+                              ),
+                              DataCell(Text(entry.value['academic_year'])),
+                              DataCell(
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.delete,
+                                    color: Colors.red,
+                                  ),
+                                  onPressed: () {
+                                    //delete function
+                                    deltStudent(
+                                      entry.value['student_id'].toString(),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
                   ),
                 ),
-              )
+              ),
             ],
           ),
         ),

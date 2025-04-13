@@ -1,4 +1,9 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:file_picker/file_picker.dart';
+
 import 'package:nsync_faculty/components/formvalidation.dart';
 import 'package:nsync_faculty/main.dart';
 
@@ -53,6 +58,7 @@ class _ManageStudentsState extends State<ManageStudents>
       String Password = _stPasswordController.text;
       String Phone = _stContactController.text;
       String academicYear = _stAcdYearController.text;
+      String? url = await photoUpload(id);
 
       if (selectedDept == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -75,6 +81,7 @@ class _ManageStudentsState extends State<ManageStudents>
         'student_contact': Phone,
         'department_id': selectedDept,
         'academic_year': academicYear,
+        'student_photo': url,
       });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -141,6 +148,38 @@ class _ManageStudentsState extends State<ManageStudents>
     }
   }
 
+  // file upload
+
+  PlatformFile? pickedImage;
+
+  Future<void> handleImagePick() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      allowMultiple: false,
+    );
+    if (result != null) {
+      setState(() {
+        pickedImage = result.files.first;
+      });
+    }
+  }
+
+  Future<String?> photoUpload(String uid) async {
+    try {
+      final bucketName = 'Student';
+      final filePath = "$uid-${pickedImage!.name}";
+      await supabase.storage
+          .from(bucketName)
+          .uploadBinary(filePath, pickedImage!.bytes!);
+      final publicUrl = supabase.storage
+          .from(bucketName)
+          .getPublicUrl(filePath);
+      return publicUrl;
+    } catch (e) {
+      print("ERROR PHOTO UPLOAD: $e");
+      return null;
+    }
+  }
+
   @override
   void initState() {
     // TODO: implement initState
@@ -203,6 +242,49 @@ class _ManageStudentsState extends State<ManageStudents>
                             width: 700,
                             child: Column(
                               children: [
+                                Row(
+                                  children: [
+                                    SizedBox(
+                                      height: 120,
+                                      width: 120,
+                                      child:
+                                          pickedImage == null
+                                              ? GestureDetector(
+                                                onTap: handleImagePick,
+                                                child: Icon(
+                                                  Icons.add_a_photo,
+                                                  color: Colors.blue,
+                                                  size: 50,
+                                                ),
+                                              )
+                                              : GestureDetector(
+                                                onTap: handleImagePick,
+                                                child: ClipRRect(
+                                                  borderRadius:
+                                                      BorderRadius.circular(
+                                                        100,
+                                                      ),
+                                                  child:
+                                                      pickedImage!.bytes != null
+                                                          ? Image.memory(
+                                                            Uint8List.fromList(
+                                                              pickedImage!
+                                                                  .bytes!,
+                                                            ),
+                                                            fit: BoxFit.cover,
+                                                          )
+                                                          : Image.file(
+                                                            File(
+                                                              pickedImage!
+                                                                  .path!,
+                                                            ),
+                                                            fit: BoxFit.cover,
+                                                          ),
+                                                ),
+                                              ),
+                                    ),
+                                  ],
+                                ),
                                 Row(
                                   children: [
                                     Expanded(
