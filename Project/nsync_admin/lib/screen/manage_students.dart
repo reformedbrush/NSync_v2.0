@@ -164,14 +164,22 @@ class _ManageStudentsState extends State<ManageStudents>
 
   Future<String?> photoUpload(String uid) async {
     try {
+      if (pickedImage == null) return null;
+
       final bucketName = 'Student';
       final filePath = "$uid-${pickedImage!.name}";
+
+      // Upload the file
       await supabase.storage
           .from(bucketName)
           .uploadBinary(filePath, pickedImage!.bytes!);
-      final publicUrl = supabase.storage
+
+      // Get the public URL
+      final String publicUrl = supabase.storage
           .from(bucketName)
           .getPublicUrl(filePath);
+
+      print("Uploaded image URL: $publicUrl"); // For debugging
       return publicUrl;
     } catch (e) {
       print("ERROR PHOTO UPLOAD: $e");
@@ -571,30 +579,67 @@ class _ManageStudentsState extends State<ManageStudents>
                   child: DataTable(
                     columns: [
                       DataColumn(label: Text("SL.No")),
+                      DataColumn(label: Text("Photo")),
                       DataColumn(label: Text('Name')),
                       DataColumn(label: Text('Adm No.')),
                       DataColumn(label: Text('Email')),
-                      DataColumn(label: Text('Password')),
                       DataColumn(label: Text('Contact No.')),
                       DataColumn(label: Text('Department')),
                       DataColumn(label: Text('Academic Year')),
-
-                      /*                   DataColumn(label: Text('Photo')),
-         */
                       DataColumn(label: Text("Delete")),
                     ],
                     rows:
                         StudList.asMap().entries.map((entry) {
-                          print(entry.value);
                           return DataRow(
                             cells: [
                               DataCell(Text((entry.key + 1000).toString())),
+                              DataCell(
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  child:
+                                      entry.value['student_photo'] != null
+                                          ? ClipRRect(
+                                            borderRadius: BorderRadius.circular(
+                                              20,
+                                            ),
+                                            child: Image.network(
+                                              entry
+                                                  .value['student_photo'], // Direct URL from database
+                                              fit: BoxFit.cover,
+                                              errorBuilder: (
+                                                context,
+                                                error,
+                                                stackTrace,
+                                              ) {
+                                                print(
+                                                  "Image Error: $error",
+                                                ); // For debugging
+                                                return CircleAvatar(
+                                                  backgroundColor:
+                                                      Colors.grey[300],
+                                                  child: Icon(
+                                                    Icons.person,
+                                                    color: Colors.grey[600],
+                                                  ),
+                                                );
+                                              },
+                                            ),
+                                          )
+                                          : CircleAvatar(
+                                            backgroundColor: Colors.grey[300],
+                                            child: Icon(
+                                              Icons.person,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                ),
+                              ),
                               DataCell(Text(entry.value['student_name'])),
                               DataCell(
                                 Text(entry.value['student_admno'].toString()),
                               ),
                               DataCell(Text(entry.value['student_email'])),
-                              DataCell(Text(entry.value['student_password'])),
                               DataCell(
                                 Text(entry.value['student_contact'].toString()),
                               ),
@@ -612,7 +657,6 @@ class _ManageStudentsState extends State<ManageStudents>
                                     color: Colors.red,
                                   ),
                                   onPressed: () {
-                                    //delete function
                                     deltStudent(
                                       entry.value['student_id'].toString(),
                                     );
