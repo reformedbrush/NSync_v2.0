@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nsync_stud/main.dart';
 import 'package:nsync_stud/screen/login.dart';
+import 'package:nsync_stud/screen/my_events.dart';
 
 class MyProfile extends StatefulWidget {
   const MyProfile({super.key});
@@ -181,7 +182,12 @@ class _MyProfileState extends State<MyProfile> {
                                   ),
                                 ),
                                 onPressed: () {
-                                  // Navigate to My Events
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => MyEvents(),
+                                    ),
+                                  );
                                 },
                                 child: const Text(
                                   "My Events",

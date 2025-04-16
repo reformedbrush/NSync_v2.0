@@ -1,3 +1,7 @@
+import 'dart:io';
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:nsync_admin/components/insert_form.dart';
 import 'package:nsync_admin/main.dart';
@@ -34,21 +38,26 @@ class _EventsScreenState extends State<EventsScreen>
       String Venue = _evVenueController.text;
       String ForDate = _evForDateController.text;
       String LastDate = _evLastDateController.text;
+      String? url = await photoUpload();
       await supabase.from('tbl_events').insert({
         'event_name': Name,
         'event_details': Details,
         'event_venue': Venue,
         'event_fordate': ForDate,
         'event_lastdate': LastDate,
-        'event_status': 1 // to auto approve events added by admin
+        'event_status': 1,
+        'event_poster': url,
+        // to auto approve events added by admin
       });
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-        content: Text(
-          "Event Details Inserted Sucessfully",
-          style: TextStyle(color: Colors.white),
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Event Details Inserted Sucessfully",
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.green,
         ),
-        backgroundColor: Colors.green,
-      ));
+      );
       _eventController.clear();
       _evDetailController.clear();
       _evVenueController.clear();
@@ -63,8 +72,10 @@ class _EventsScreenState extends State<EventsScreen>
 
   Future<void> fetchEvents() async {
     try {
-      final response =
-          await supabase.from('tbl_events').select().eq('event_status', 1);
+      final response = await supabase
+          .from('tbl_events')
+          .select()
+          .eq('event_status', 1);
       setState(() {
         EventList = response;
       });
@@ -80,13 +91,16 @@ class _EventsScreenState extends State<EventsScreen>
 
   Future<void> editEvent() async {
     try {
-      await supabase.from('tbl_events').update({
-        'event_name': _eventController.text,
-        'event_venue': _evVenueController.text,
-        'event_details': _evDetailController.text,
-        'event_fordate': _evForDateController.text,
-        'event_lastdate': _evLastDateController.text
-      }).eq('event_id', eid);
+      await supabase
+          .from('tbl_events')
+          .update({
+            'event_name': _eventController.text,
+            'event_venue': _evVenueController.text,
+            'event_details': _evDetailController.text,
+            'event_fordate': _evForDateController.text,
+            'event_lastdate': _evLastDateController.text,
+          })
+          .eq('event_id', eid);
       fetchEvents();
       _eventController.clear();
       _evDetailController.clear();
@@ -112,7 +126,9 @@ class _EventsScreenState extends State<EventsScreen>
   //select date
 
   Future<void> _selectDate(
-      BuildContext context, TextEditingController controller) async {
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
     DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
@@ -124,6 +140,38 @@ class _EventsScreenState extends State<EventsScreen>
       setState(() {
         controller.text = DateFormat('yyyy-MM-dd').format(pickedDate);
       });
+    }
+  }
+
+  // file upload
+  PlatformFile? pickedImage;
+
+  Future<void> handleImagePick() async {
+    FilePickerResult? result = await FilePicker.platform.pickFiles(
+      allowMultiple: false,
+    );
+    if (result != null) {
+      setState(() {
+        pickedImage = result.files.first;
+      });
+    }
+  }
+
+  Future<String?> photoUpload() async {
+    try {
+      final bucketName = 'Post';
+      final filePath =
+          "Event-${DateTime.now().millisecondsSinceEpoch}-${pickedImage!.name}";
+      await supabase.storage
+          .from(bucketName)
+          .uploadBinary(filePath, pickedImage!.bytes!);
+      final publicUrl = supabase.storage
+          .from(bucketName)
+          .getPublicUrl(filePath);
+      return publicUrl;
+    } catch (e) {
+      print("ERROR PHOTO UPLOAD: $e");
+      return null;
     }
   }
 
@@ -143,38 +191,40 @@ class _EventsScreenState extends State<EventsScreen>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (context) => RequestedEvents()));
-                    },
-                    label: Text(
-                      "Event Requests",
-                      style: TextStyle(color: Colors.white),
+                padding: const EdgeInsets.all(8.0),
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => RequestedEvents(),
+                      ),
+                    );
+                  },
+                  label: Text(
+                    "Event Requests",
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Color(0xFF161616),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
                     ),
-                    style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF161616),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(5)),
-                        padding:
-                            EdgeInsets.symmetric(horizontal: 25, vertical: 18)),
-                    icon: Icon(
-                      Icons.new_label,
-                      color: Colors.white,
-                    ),
-                  )),
+                    padding: EdgeInsets.symmetric(horizontal: 25, vertical: 18),
+                  ),
+                  icon: Icon(Icons.new_label, color: Colors.white),
+                ),
+              ),
               Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xFF161616),
-                      shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5)),
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 25, vertical: 18)),
+                    backgroundColor: Color(0xFF161616),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 25, vertical: 18),
+                  ),
                   onPressed: () {
                     setState(() {
                       _isFormVisible =
@@ -190,172 +240,243 @@ class _EventsScreenState extends State<EventsScreen>
                     color: Colors.white,
                   ),
                 ),
-              )
+              ),
             ],
           ),
           AnimatedSize(
             duration: _animationDuration,
             curve: Curves.easeInOut,
-            child: _isFormVisible
-                ? Form(
-                    child: SizedBox(
-                    width: 700,
-                    child: Column(
-                      children: [
-                        Row(
+            child:
+                _isFormVisible
+                    ? Form(
+                      child: SizedBox(
+                        width: 700,
+                        child: Column(
                           children: [
-                            Expanded(
-                                child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: TextFieldStyle(
-                                inputController: _eventController,
-                                label: "Event Name",
-                              ),
-                            )),
-                            Expanded(
-                                child: Padding(
-                              padding: EdgeInsets.all(8),
-                              child: TextFieldStyle(
-                                label: "Venue",
-                                inputController: _evVenueController,
-                              ),
-                            )),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                                child: Padding(
-                              padding: EdgeInsets.all(8),
-                              child: TextFieldStyle(
-                                  label: "Event Details",
-                                  inputController: _evDetailController),
-                            )),
-                          ],
-                        ),
-                        Row(
-                          children: [
-                            Expanded(
-                                child: Padding(
-                              padding: EdgeInsets.all(8),
-                              child: TextFormField(
-                                controller: _evForDateController,
-                                readOnly: true,
-                                decoration: const InputDecoration(
-                                  labelText: "For_Date",
-                                  enabledBorder: OutlineInputBorder(
-                                      borderSide:
-                                          BorderSide(color: Colors.grey)),
-                                  suffixIcon: Icon(Icons.calendar_today),
+                            Row(
+                              children: [
+                                SizedBox(
+                                  height: 120,
+                                  width: 120,
+                                  child:
+                                      pickedImage == null
+                                          ? GestureDetector(
+                                            onTap: handleImagePick,
+                                            child: Icon(
+                                              Icons.add_a_photo,
+                                              color: Colors.blue,
+                                              size: 50,
+                                            ),
+                                          )
+                                          : GestureDetector(
+                                            onTap: handleImagePick,
+                                            child: ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(100),
+                                              child:
+                                                  pickedImage!.bytes != null
+                                                      ? Image.memory(
+                                                        Uint8List.fromList(
+                                                          pickedImage!.bytes!,
+                                                        ),
+                                                        fit: BoxFit.cover,
+                                                      )
+                                                      : Image.file(
+                                                        File(
+                                                          pickedImage!.path!,
+                                                        ),
+                                                        fit: BoxFit.cover,
+                                                      ),
+                                            ),
+                                          ),
                                 ),
-                                onTap: () =>
-                                    _selectDate(context, _evForDateController),
-                              ),
-                            )),
-                            Expanded(
-                                child: Padding(
-                              padding: EdgeInsets.all(8),
-                              child: TextFormField(
-                                controller: _evLastDateController,
-                                readOnly: true,
-                                decoration: const InputDecoration(
-                                  labelText: "Last_date",
-                                  enabledBorder: OutlineInputBorder(
-                                      borderSide:
-                                          BorderSide(color: Colors.grey)),
-                                  suffixIcon: Icon(Icons.calendar_today),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(8.0),
+                                    child: TextFieldStyle(
+                                      inputController: _eventController,
+                                      label: "Event Name",
+                                    ),
+                                  ),
                                 ),
-                                onTap: () =>
-                                    _selectDate(context, _evLastDateController),
-                              ),
-                            ))
-                          ],
-                        ),
-                        ElevatedButton(
-                            style: ElevatedButton.styleFrom(
+                                Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: TextFieldStyle(
+                                      label: "Venue",
+                                      inputController: _evVenueController,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: TextFieldStyle(
+                                      label: "Event Details",
+                                      inputController: _evDetailController,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: TextFormField(
+                                      controller: _evForDateController,
+                                      readOnly: true,
+                                      decoration: const InputDecoration(
+                                        labelText: "For_Date",
+                                        enabledBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        suffixIcon: Icon(Icons.calendar_today),
+                                      ),
+                                      onTap:
+                                          () => _selectDate(
+                                            context,
+                                            _evForDateController,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                                Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: TextFormField(
+                                      controller: _evLastDateController,
+                                      readOnly: true,
+                                      decoration: const InputDecoration(
+                                        labelText: "Last_date",
+                                        enabledBorder: OutlineInputBorder(
+                                          borderSide: BorderSide(
+                                            color: Colors.grey,
+                                          ),
+                                        ),
+                                        suffixIcon: Icon(Icons.calendar_today),
+                                      ),
+                                      onTap:
+                                          () => _selectDate(
+                                            context,
+                                            _evLastDateController,
+                                          ),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            ElevatedButton(
+                              style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.blue,
                                 padding: EdgeInsets.symmetric(
-                                    vertical: 22, horizontal: 70),
+                                  vertical: 22,
+                                  horizontal: 70,
+                                ),
                                 shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(5))),
-                            onPressed: () {
-                              if (eid == 0) {
-                                eventInsert();
-                              } else {
-                                editEvent();
-                              }
-                            },
-                            child: Text(
-                              "Insert",
-                              style: TextStyle(color: Colors.white),
-                            ))
-                      ],
-                    ),
-                  ))
-                : Container(),
+                                  borderRadius: BorderRadius.circular(5),
+                                ),
+                              ),
+                              onPressed: () {
+                                if (eid == 0) {
+                                  eventInsert();
+                                } else {
+                                  editEvent();
+                                }
+                              },
+                              child: Text(
+                                "Insert",
+                                style: TextStyle(color: Colors.white),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    )
+                    : Container(),
           ),
-          SizedBox(
-            height: 50,
-          ),
+          SizedBox(height: 50),
           Container(
             child: Center(
-              child: Text("Events Table",
-                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30)),
+              child: Text(
+                "Events Table",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
+              ),
             ),
           ),
           Container(
             child: Padding(
               padding: EdgeInsets.all(8),
               child: DataTable(
-                  columns: [
-                    DataColumn(label: Text("Sl No")),
-                    DataColumn(label: Text("Event")),
-                    DataColumn(label: Text("Venue")),
-                    DataColumn(label: Text("Details")),
-                    DataColumn(label: Text("For Date")),
-                    DataColumn(label: Text("Last Date")),
-                    DataColumn(label: Text("Edit")),
-                    DataColumn(label: Text("Delete"))
-                  ],
-                  rows: EventList.asMap().entries.map((entry) {
-                    return DataRow(cells: [
-                      DataCell(Text((entry.key + 1).toString())),
-                      DataCell(Text(entry.value['event_name'])),
-                      DataCell(Text(entry.value['event_venue'])),
-                      DataCell(Text(entry.value['event_details'])),
-                      DataCell(Text(entry.value['event_fordate'])),
-                      DataCell(Text(entry.value['event_lastdate'])),
-                      DataCell(IconButton(
-                        icon: const Icon(Icons.edit, color: Colors.green),
-                        onPressed: () {
-                          setState(() {
-                            _evForDateController.text =
-                                entry.value['event_fordate'];
-                            _evLastDateController.text =
-                                entry.value['event_lastdate'];
-                            _eventController.text = entry.value['event_name'];
-                            _evDetailController.text =
-                                entry.value['event_details'];
-                            _evVenueController.text =
-                                entry.value['event_venue'];
+                columns: [
+                  DataColumn(label: Text("Sl No")),
+                  DataColumn(label: Text("Event")),
+                  DataColumn(label: Text("Venue")),
+                  DataColumn(label: Text("Details")),
+                  DataColumn(label: Text("For Date")),
+                  DataColumn(label: Text("Last Date")),
+                  DataColumn(label: Text("Edit")),
+                  DataColumn(label: Text("Delete")),
+                ],
+                rows:
+                    EventList.asMap().entries.map((entry) {
+                      return DataRow(
+                        cells: [
+                          DataCell(Text((entry.key + 1).toString())),
+                          DataCell(Text(entry.value['event_name'])),
+                          DataCell(Text(entry.value['event_venue'])),
+                          DataCell(Text(entry.value['event_details'])),
+                          DataCell(Text(entry.value['event_fordate'])),
+                          DataCell(Text(entry.value['event_lastdate'])),
+                          DataCell(
+                            IconButton(
+                              icon: const Icon(Icons.edit, color: Colors.green),
+                              onPressed: () {
+                                setState(() {
+                                  _evForDateController.text =
+                                      entry.value['event_fordate'];
+                                  _evLastDateController.text =
+                                      entry.value['event_lastdate'];
+                                  _eventController.text =
+                                      entry.value['event_name'];
+                                  _evDetailController.text =
+                                      entry.value['event_details'];
+                                  _evVenueController.text =
+                                      entry.value['event_venue'];
 
-                            eid = entry.value['event_id'];
-                            _isFormVisible = true;
-                            print(eid);
-                          });
-                        },
-                      )),
-                      DataCell(IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () {
-                          DelEvent(entry.value['event_id'].toString());
-                          //delete function
-                        },
-                      ))
-                    ]);
-                  }).toList()),
+                                  eid = entry.value['event_id'];
+                                  _isFormVisible = true;
+                                  print(eid);
+                                });
+                              },
+                            ),
+                          ),
+                          DataCell(
+                            IconButton(
+                              icon: const Icon(Icons.delete, color: Colors.red),
+                              onPressed: () {
+                                DelEvent(entry.value['event_id'].toString());
+                                //delete function
+                              },
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+              ),
             ),
-          )
+          ),
         ],
       ),
     );

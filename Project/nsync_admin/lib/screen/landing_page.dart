@@ -17,7 +17,8 @@ class _LandingScreenState extends State<LandingScreen> {
       final response = await supabase
           .from('tbl_events')
           .select()
-          .eq("event_status", 1);
+          .eq("event_status", 1)
+          .order('created_at', ascending: false);
       setState(() {
         eventList = response;
       });
@@ -75,72 +76,75 @@ class _LandingScreenState extends State<LandingScreen> {
                     ),
                     width: 700,
                     height: 500,
-                    child: Column(
-                      children: [
-                        Center(
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Text(
-                              "Upcoming Events",
-                              style: TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                    child: SingleChildScrollView(
+                      child: Column(
+                        children: [
+                          Center(
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: Text(
+                                "Upcoming Events",
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        ListView.builder(
-                          physics: NeverScrollableScrollPhysics(),
-                          shrinkWrap: true,
-                          itemCount: eventList.length,
-                          itemBuilder: (context, index) {
-                            final event = eventList[index];
-                            return Padding(
-                              padding: const EdgeInsets.all(6.0),
-                              child: (Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                padding: EdgeInsets.all(10),
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    /* Image.asset(event                        ), */
-                                    Padding(
-                                      padding: const EdgeInsets.all(5.0),
-                                      child: Text(
-                                        event['event_name'],
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
+                          ListView.builder(
+                            physics: NeverScrollableScrollPhysics(),
+                            shrinkWrap: true,
+                            itemCount: eventList.length,
+                            itemBuilder: (context, index) {
+                              final event = eventList[index];
+                              return Padding(
+                                padding: const EdgeInsets.all(6.0),
+                                child: (Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                  padding: EdgeInsets.all(10),
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      /* Image.asset(event                        ), */
+                                      Padding(
+                                        padding: const EdgeInsets.all(5.0),
+                                        child: Text(
+                                          event['event_name'],
+                                          style: const TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 5.0,
+                                      Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 5.0,
+                                        ),
+                                        child: Text(
+                                          event['event_venue'],
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
-                                      child: Text(
-                                        event['event_venue'],
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
+                                      Padding(
+                                        padding: const EdgeInsets.all(5.0),
+                                        child: Text(
+                                          event['event_details'],
+                                          maxLines: 2,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
                                       ),
-                                    ),
-                                    Padding(
-                                      padding: const EdgeInsets.all(5.0),
-                                      child: Text(
-                                        event['event_details'],
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              )),
-                            );
-                          },
-                        ),
-                      ],
+                                    ],
+                                  ),
+                                )),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

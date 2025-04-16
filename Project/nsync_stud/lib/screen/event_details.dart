@@ -154,6 +154,62 @@ class _EventDetailsState extends State<EventDetails> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
+                              // Event Poster
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(10),
+                                child:
+                                    eventData['event_poster'] != null &&
+                                            eventData['event_poster'].isNotEmpty
+                                        ? Image.network(
+                                          eventData['event_poster'],
+                                          height: 150,
+                                          width: double.infinity,
+                                          fit: BoxFit.cover,
+                                          loadingBuilder: (
+                                            context,
+                                            child,
+                                            loadingProgress,
+                                          ) {
+                                            if (loadingProgress == null)
+                                              return child;
+                                            return const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            );
+                                          },
+                                          errorBuilder: (
+                                            context,
+                                            error,
+                                            stackTrace,
+                                          ) {
+                                            return Container(
+                                              height: 150,
+                                              color: Colors.grey[300],
+                                              child: const Center(
+                                                child: Text(
+                                                  'Failed to load poster',
+                                                  style: TextStyle(
+                                                    color: Colors.grey,
+                                                  ),
+                                                ),
+                                              ),
+                                            );
+                                          },
+                                        )
+                                        : Container(
+                                          height: 150,
+                                          color: Colors.grey[300],
+                                          child: const Center(
+                                            child: Text(
+                                              'No poster available',
+                                              style: TextStyle(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                              ),
+                              const SizedBox(height: 10),
                               Text(
                                 eventData['event_name'] ?? 'Event Name',
                                 style: const TextStyle(
