@@ -13,6 +13,8 @@ class _EventDetailsState extends State<EventDetails> {
   Map<String, dynamic> eventData = {};
   bool isRegistered = false;
   bool isLoading = true;
+  int currentParticipants = 0;
+  bool isEventFull = false;
 
   Future<void> fetchEvent() async {
     try {
@@ -30,18 +32,23 @@ class _EventDetailsState extends State<EventDetails> {
     }
   }
 
-  Future<void> checkRegistration() async {
+  Future<void> checkRegistrationAndParticipants() async {
     try {
       final user = supabase.auth.currentUser;
       if (user != null) {
-        final response = await supabase
+        final participantResponse = await supabase
             .from('tbl_participants')
             .select()
-            .eq('event_id', widget.id)
-            .eq('student_id', user.id);
+            .eq('event_id', widget.id);
 
         setState(() {
-          isRegistered = response.isNotEmpty;
+          currentParticipants = participantResponse.length;
+          isRegistered = participantResponse.any(
+            (participant) => participant['student_id'] == user.id,
+          );
+          isEventFull =
+              eventData['event_participants'] != null &&
+              currentParticipants >= eventData['event_participants'];
           isLoading = false;
         });
       } else {
@@ -58,6 +65,8 @@ class _EventDetailsState extends State<EventDetails> {
   }
 
   Future<void> registerEvent() async {
+    if (isEventFull) return;
+
     try {
       setState(() {
         isLoading = true;
@@ -72,6 +81,10 @@ class _EventDetailsState extends State<EventDetails> {
 
         setState(() {
           isRegistered = true;
+          currentParticipants++;
+          isEventFull =
+              eventData['event_participants'] != null &&
+              currentParticipants >= eventData['event_participants'];
           isLoading = false;
         });
 
@@ -100,7 +113,7 @@ class _EventDetailsState extends State<EventDetails> {
   @override
   void initState() {
     super.initState();
-    fetchEvent().then((_) => checkRegistration());
+    fetchEvent().then((_) => checkRegistrationAndParticipants());
   }
 
   @override
@@ -113,7 +126,6 @@ class _EventDetailsState extends State<EventDetails> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Back button and title
               Row(
                 children: [
                   IconButton(
@@ -131,8 +143,6 @@ class _EventDetailsState extends State<EventDetails> {
                 ],
               ),
               const SizedBox(height: 30),
-
-              // Event Ticket Card
               Expanded(
                 child: Container(
                   width: double.infinity,
@@ -142,7 +152,6 @@ class _EventDetailsState extends State<EventDetails> {
                   ),
                   child: Column(
                     children: [
-                      // Upper part of the ticket
                       Expanded(
                         flex: 3,
                         child: Container(
@@ -154,7 +163,6 @@ class _EventDetailsState extends State<EventDetails> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              // Event Poster
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(10),
                                 child:
@@ -170,8 +178,9 @@ class _EventDetailsState extends State<EventDetails> {
                                             child,
                                             loadingProgress,
                                           ) {
-                                            if (loadingProgress == null)
+                                            if (loadingProgress == null) {
                                               return child;
+                                            }
                                             return const Center(
                                               child:
                                                   CircularProgressIndicator(),
@@ -281,8 +290,6 @@ class _EventDetailsState extends State<EventDetails> {
                           ),
                         ),
                       ),
-
-                      // Lower part of the ticket
                       Expanded(
                         flex: 2,
                         child: Container(
@@ -309,7 +316,6 @@ class _EventDetailsState extends State<EventDetails> {
                                 overflow: TextOverflow.ellipsis,
                               ),
                               const Spacer(),
-                              // Registration button
                               Center(
                                 child: Column(
                                   children: [
@@ -317,7 +323,7 @@ class _EventDetailsState extends State<EventDetails> {
                                         ? const CircularProgressIndicator()
                                         : GestureDetector(
                                           onTap:
-                                              isRegistered
+                                              isRegistered || isEventFull
                                                   ? null
                                                   : () {
                                                     registerEvent();
@@ -327,7 +333,7 @@ class _EventDetailsState extends State<EventDetails> {
                                             width: 200,
                                             decoration: BoxDecoration(
                                               color:
-                                                  isRegistered
+                                                  isRegistered || isEventFull
                                                       ? Colors.grey
                                                       : Colors.blue,
                                               borderRadius:
@@ -335,12 +341,15 @@ class _EventDetailsState extends State<EventDetails> {
                                             ),
                                             child: Center(
                                               child: Text(
-                                                isRegistered
+                                                isEventFull
+                                                    ? 'Registration Closed'
+                                                    : isRegistered
                                                     ? 'Already Registered'
                                                     : 'Register',
                                                 style: TextStyle(
                                                   color:
-                                                      isRegistered
+                                                      isRegistered ||
+                                                              isEventFull
                                                           ? Colors.black
                                                           : Colors.white,
                                                   fontWeight: FontWeight.bold,
