@@ -39,7 +39,7 @@ class _StudentClubState extends State<StudentClub> {
       body: SafeArea(
         child:
             clubList.isEmpty
-                ? Center(child: Text("You havnt joined any club"))
+                ? Center(child: Text("You have not joined any clubs"))
                 : SingleChildScrollView(
                   child: Column(
                     children: [
