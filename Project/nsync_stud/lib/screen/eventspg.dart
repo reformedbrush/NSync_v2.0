@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:nsync_stud/main.dart';
 import 'package:intl/intl.dart';
+import 'package:nsync_stud/screen/event_details.dart';
 
 class StuEvents extends StatefulWidget {
   const StuEvents({super.key});
@@ -12,8 +13,6 @@ class StuEvents extends StatefulWidget {
 
 class _StuEventsState extends State<StuEvents> {
   int _currentCarouselIndex = 0;
-  final List<String> _categories = ['All', 'Department', 'Club', 'Sport'];
-  String _selectedCategory = 'All';
 
   // Sample event data
   List<Map<String, dynamic>> _posterNews = [];
@@ -26,12 +25,14 @@ class _StuEventsState extends State<StuEvents> {
       List<Map<String, dynamic>> eventList = [];
       for (var data in response) {
         eventList.add({
-          'title': data['event_name'] ?? "",
-          'date': data['created_at'] ?? "",
-          'location': data['event_venue'] ?? "",
+          'event_id': data['event_id'] ?? "",
+          'event_name': data['event_name'] ?? "",
+          'event_venue': data['event_venue'] ?? "",
+          'event_details': data['event_details'] ?? "",
+          'event_fordate': data['event_fordate'] ?? "",
+          'created_at': data['created_at'] ?? "",
         });
       }
-      print(eventList);
       setState(() {
         _concertEvents = eventList;
       });
@@ -122,10 +123,6 @@ class _StuEventsState extends State<StuEvents> {
                     'Welcome Back!',
                     style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   ),
-                  const Text(
-                    'Wilson Culhane',
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
                 ],
               ),
             ],
@@ -202,7 +199,7 @@ class _StuEventsState extends State<StuEvents> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Festival Musics',
+                'Newsletters',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               TextButton(
@@ -215,46 +212,10 @@ class _StuEventsState extends State<StuEvents> {
             ],
           ),
         ),
-        SizedBox(
-          height: 50,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: _categories.length,
-            itemBuilder: (context, index) {
-              final category = _categories[index];
-              final isSelected = category == _selectedCategory;
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _selectedCategory = category;
-                  });
-                },
-                child: Container(
-                  margin: const EdgeInsets.only(right: 10),
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: isSelected ? Colors.teal : Colors.transparent,
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  alignment: Alignment.center,
-                  child: Text(
-                    category,
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : Colors.black,
-                      fontWeight:
-                          isSelected ? FontWeight.bold : FontWeight.normal,
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
         _posterNews.isEmpty
             ? const Padding(
               padding: EdgeInsets.all(16.0),
-              child: Text("No festival news available"),
+              child: Text("No College news available"),
             )
             : CarouselSlider.builder(
               itemCount: _posterNews.length,
@@ -386,7 +347,7 @@ class _StuEventsState extends State<StuEvents> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               const Text(
-                'Top Concerts',
+                'Top Events',
                 style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
               ),
               TextButton(
@@ -420,36 +381,69 @@ class _StuEventsState extends State<StuEvents> {
 
   Widget _buildConcertCard(Map<String, dynamic> event) {
     return Container(
+      decoration: BoxDecoration(
+        color: const Color.fromARGB(255, 245, 243, 243),
+        borderRadius: BorderRadius.circular(10),
+      ),
       margin: const EdgeInsets.only(bottom: 15),
       child: Row(
         children: [
           // Event details
           Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  event['date'] != null
-                      ? DateFormat(
-                        'dd-MM-yyyy',
-                      ).format(DateTime.parse(event['date']))
-                      : 'No date',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                ),
-                const SizedBox(height: 5),
-                Text(
-                  event['title'],
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    event['created_at'] != null
+                        ? DateFormat(
+                          'dd-MM-yyyy',
+                        ).format(DateTime.parse(event['created_at']))
+                        : 'No date',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   ),
+                  const SizedBox(height: 5),
+                  Text(
+                    event['event_name'] ?? 'No title',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    event['event_venue'] ?? 'No location',
+                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Register button
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EventDetails(id: event['event_id']),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.black,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  event['location'],
-                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
                 ),
-              ],
+              ),
+              child: const Text('View More'),
             ),
           ),
         ],
