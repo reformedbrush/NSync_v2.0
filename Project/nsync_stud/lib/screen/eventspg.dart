@@ -21,7 +21,11 @@ class _StuEventsState extends State<StuEvents> {
 
   Future<void> fetchEvent() async {
     try {
-      final response = await supabase.from('tbl_events').select();
+      final response = await supabase
+          .from('tbl_events')
+          .select()
+          .order('created_at', ascending: false);
+      ;
       List<Map<String, dynamic>> eventList = [];
       for (var data in response) {
         eventList.add({
