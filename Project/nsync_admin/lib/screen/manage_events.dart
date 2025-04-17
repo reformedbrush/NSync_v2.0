@@ -17,80 +17,143 @@ class EventsScreen extends StatefulWidget {
 
 class _EventsScreenState extends State<EventsScreen>
     with SingleTickerProviderStateMixin {
-  bool _isFormVisible = false; // To manage form visibility
+  bool _isFormVisible = false;
   final Duration _animationDuration = const Duration(milliseconds: 300);
 
-  //controllers
+  // Controllers
   final TextEditingController _eventController = TextEditingController();
   final TextEditingController _evDetailController = TextEditingController();
   final TextEditingController _evVenueController = TextEditingController();
   final TextEditingController _evForDateController = TextEditingController();
   final TextEditingController _evLastDateController = TextEditingController();
+  final TextEditingController _evParticipantsController =
+      TextEditingController();
 
-  //list to store tbl data
+  // List to store table data
   List<Map<String, dynamic>> EventList = [];
 
-  //insert
+  // Insert
   Future<void> eventInsert() async {
     try {
-      String Name = _eventController.text;
-      String Details = _evDetailController.text;
-      String Venue = _evVenueController.text;
-      String ForDate = _evForDateController.text;
-      String LastDate = _evLastDateController.text;
+      if (_eventController.text.isEmpty ||
+          _evDetailController.text.isEmpty ||
+          _evVenueController.text.isEmpty ||
+          _evForDateController.text.isEmpty ||
+          _evLastDateController.text.isEmpty ||
+          _evParticipantsController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Please fill all fields",
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       String? url = await photoUpload();
+      if (url == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Failed to upload poster",
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       await supabase.from('tbl_events').insert({
-        'event_name': Name,
-        'event_details': Details,
-        'event_venue': Venue,
-        'event_fordate': ForDate,
-        'event_lastdate': LastDate,
+        'event_name': _eventController.text,
+        'event_details': _evDetailController.text,
+        'event_venue': _evVenueController.text,
+        'event_fordate': _evForDateController.text,
+        'event_lastdate': _evLastDateController.text,
         'event_status': 1,
+        'event_participants': _evParticipantsController.text,
         'event_poster': url,
-        // to auto approve events added by admin
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            "Event Details Inserted Sucessfully",
+            "Event Details Inserted Successfully",
             style: TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.green,
         ),
       );
-      _eventController.clear();
-      _evDetailController.clear();
-      _evVenueController.clear();
-      _evForDateController.clear();
-      _evLastDateController.clear();
+
+      setState(() {
+        _eventController.clear();
+        _evDetailController.clear();
+        _evVenueController.clear();
+        _evForDateController.clear();
+        _evLastDateController.clear();
+        _evParticipantsController.clear();
+        pickedImage = null;
+        _isFormVisible = false;
+      });
+
+      fetchEvents();
     } catch (e) {
       print("ERROR INSERTING DATA: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Error: $e",
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
-  //Select
-
+  // Select
   Future<void> fetchEvents() async {
     try {
       final response = await supabase
           .from('tbl_events')
           .select()
           .eq('event_status', 1);
+      print("Response type: ${response.runtimeType}");
+      print("Response data: $response");
       setState(() {
-        EventList = response;
+        EventList = List<Map<String, dynamic>>.from(response);
       });
-      fetchEvents();
     } catch (e) {
       print("ERROR FETCHING DATA: $e");
     }
   }
 
-  //Edit
-
+  // Edit
   int eid = 0;
 
   Future<void> editEvent() async {
     try {
+      if (_eventController.text.isEmpty ||
+          _evDetailController.text.isEmpty ||
+          _evVenueController.text.isEmpty ||
+          _evForDateController.text.isEmpty ||
+          _evLastDateController.text.isEmpty ||
+          _evParticipantsController.text.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Please fill all fields",
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
       await supabase
           .from('tbl_events')
           .update({
@@ -99,21 +162,47 @@ class _EventsScreenState extends State<EventsScreen>
             'event_details': _evDetailController.text,
             'event_fordate': _evForDateController.text,
             'event_lastdate': _evLastDateController.text,
+            'event_participants': _evParticipantsController.text,
           })
           .eq('event_id', eid);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "Event Updated Successfully",
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.green,
+        ),
+      );
+
+      setState(() {
+        _eventController.clear();
+        _evDetailController.clear();
+        _evVenueController.clear();
+        _evForDateController.clear();
+        _evLastDateController.clear();
+        _evParticipantsController.clear();
+        eid = 0;
+        _isFormVisible = false;
+      });
+
       fetchEvents();
-      _eventController.clear();
-      _evDetailController.clear();
-      _evVenueController.clear();
-      _evForDateController.clear();
-      _evLastDateController.clear();
     } catch (e) {
       print("ERROR UPDATING DATA: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Error: $e",
+            style: const TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
-  //Delete
-
+  // Delete
   Future<void> DelEvent(String did) async {
     try {
       await supabase.from("tbl_events").delete().eq("event_id", did);
@@ -123,8 +212,7 @@ class _EventsScreenState extends State<EventsScreen>
     }
   }
 
-  //select date
-
+  // Select date
   Future<void> _selectDate(
     BuildContext context,
     TextEditingController controller,
@@ -132,8 +220,8 @@ class _EventsScreenState extends State<EventsScreen>
     DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: DateTime.now(),
-      firstDate: DateTime.now(), // Prevents past dates
-      lastDate: DateTime.now().add(Duration(days: 365)), // Limits to 1 year
+      firstDate: DateTime.now(),
+      lastDate: DateTime.now().add(Duration(days: 365)),
     );
 
     if (pickedDate != null) {
@@ -143,7 +231,7 @@ class _EventsScreenState extends State<EventsScreen>
     }
   }
 
-  // file upload
+  // File upload
   PlatformFile? pickedImage;
 
   Future<void> handleImagePick() async {
@@ -227,8 +315,7 @@ class _EventsScreenState extends State<EventsScreen>
                   ),
                   onPressed: () {
                     setState(() {
-                      _isFormVisible =
-                          !_isFormVisible; // Toggle form visibility
+                      _isFormVisible = !_isFormVisible;
                     });
                   },
                   label: Text(
@@ -325,6 +412,16 @@ class _EventsScreenState extends State<EventsScreen>
                                     ),
                                   ),
                                 ),
+                                Expanded(
+                                  child: Padding(
+                                    padding: EdgeInsets.all(8),
+                                    child: TextFieldStyle(
+                                      label: "Participants",
+                                      inputController:
+                                          _evParticipantsController,
+                                    ),
+                                  ),
+                                ),
                               ],
                             ),
                             Row(
@@ -396,7 +493,7 @@ class _EventsScreenState extends State<EventsScreen>
                                 }
                               },
                               child: Text(
-                                "Insert",
+                                eid == 0 ? "Insert" : "Update",
                                 style: TextStyle(color: Colors.white),
                               ),
                             ),
@@ -426,38 +523,52 @@ class _EventsScreenState extends State<EventsScreen>
                   DataColumn(label: Text("Details")),
                   DataColumn(label: Text("For Date")),
                   DataColumn(label: Text("Last Date")),
+                  DataColumn(label: Text("Participants")),
                   DataColumn(label: Text("Edit")),
                   DataColumn(label: Text("Delete")),
                 ],
                 rows:
                     EventList.asMap().entries.map((entry) {
+                      final event = entry.value;
                       return DataRow(
                         cells: [
                           DataCell(Text((entry.key + 1).toString())),
-                          DataCell(Text(entry.value['event_name'])),
-                          DataCell(Text(entry.value['event_venue'])),
-                          DataCell(Text(entry.value['event_details'])),
-                          DataCell(Text(entry.value['event_fordate'])),
-                          DataCell(Text(entry.value['event_lastdate'])),
+                          DataCell(Text(event['event_name']?.toString() ?? '')),
+                          DataCell(
+                            Text(event['event_venue']?.toString() ?? ''),
+                          ),
+                          DataCell(
+                            Text(event['event_details']?.toString() ?? ''),
+                          ),
+                          DataCell(
+                            Text(event['event_fordate']?.toString() ?? ''),
+                          ),
+                          DataCell(
+                            Text(event['event_lastdate']?.toString() ?? ''),
+                          ),
+                          DataCell(
+                            Text(event['event_participants']?.toString() ?? ''),
+                          ),
                           DataCell(
                             IconButton(
                               icon: const Icon(Icons.edit, color: Colors.green),
                               onPressed: () {
                                 setState(() {
                                   _evForDateController.text =
-                                      entry.value['event_fordate'];
+                                      event['event_fordate']?.toString() ?? '';
                                   _evLastDateController.text =
-                                      entry.value['event_lastdate'];
+                                      event['event_lastdate']?.toString() ?? '';
                                   _eventController.text =
-                                      entry.value['event_name'];
+                                      event['event_name']?.toString() ?? '';
                                   _evDetailController.text =
-                                      entry.value['event_details'];
+                                      event['event_details']?.toString() ?? '';
                                   _evVenueController.text =
-                                      entry.value['event_venue'];
-
-                                  eid = entry.value['event_id'];
+                                      event['event_venue']?.toString() ?? '';
+                                  _evParticipantsController.text =
+                                      event['event_participants']?.toString() ??
+                                      '';
+                                  eid = event['event_id'] ?? 0;
                                   _isFormVisible = true;
-                                  print(eid);
                                 });
                               },
                             ),
@@ -466,8 +577,7 @@ class _EventsScreenState extends State<EventsScreen>
                             IconButton(
                               icon: const Icon(Icons.delete, color: Colors.red),
                               onPressed: () {
-                                DelEvent(entry.value['event_id'].toString());
-                                //delete function
+                                DelEvent(event['event_id'].toString());
                               },
                             ),
                           ),
