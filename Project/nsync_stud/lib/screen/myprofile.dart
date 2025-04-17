@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:nsync_stud/main.dart';
+import 'package:nsync_stud/screen/feedback.dart';
 import 'package:nsync_stud/screen/login.dart';
 import 'package:nsync_stud/screen/my_events.dart';
 
@@ -172,7 +173,7 @@ class _MyProfileState extends State<MyProfile> {
                             Expanded(
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.blue,
+                                  backgroundColor: Colors.black,
                                   foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 15,
@@ -208,8 +209,8 @@ class _MyProfileState extends State<MyProfile> {
                             Expanded(
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: Colors.black,
+                                  backgroundColor: Colors.black,
+                                  foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 15,
                                   ),
@@ -234,6 +235,41 @@ class _MyProfileState extends State<MyProfile> {
                             ),
                           ],
                         ),
+                        const SizedBox(height: 16),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.black,
+                                  foregroundColor: Colors.white,
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 15,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                  ),
+                                ),
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => AppFeedback(),
+                                    ),
+                                  );
+                                },
+                                child: const Text(
+                                  "Feedback",
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
 
                         const SizedBox(height: 16),
 
@@ -242,8 +278,8 @@ class _MyProfileState extends State<MyProfile> {
                             Expanded(
                               child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red.shade50,
-                                  foregroundColor: Colors.red,
+                                  backgroundColor: Colors.black,
+                                  foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
                                     vertical: 15,
                                   ),
