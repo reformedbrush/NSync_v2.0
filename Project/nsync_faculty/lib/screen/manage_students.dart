@@ -126,9 +126,18 @@ class _ManageStudentsState extends State<ManageStudents>
 
   Future<void> fetchStudent() async {
     try {
+      final faculty =
+          await supabase
+              .from("tbl_faculty")
+              .select("department_id")
+              .eq('faculty_id', supabase.auth.currentUser!.id)
+              .single();
+
       final response = await supabase
           .from('tbl_student')
-          .select('*,tbl_department(*)');
+          .select('*, tbl_department(*)')
+          .eq('department_id', faculty['department_id']);
+
       setState(() {
         StudList = response;
       });
@@ -136,7 +145,6 @@ class _ManageStudentsState extends State<ManageStudents>
       print("ERROR FETCHING: $e");
     }
   }
-
   // delete
 
   Future<void> deltStudent(String did) async {

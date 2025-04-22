@@ -16,10 +16,18 @@ class _MyDepartmentState extends State<MyDepartment> {
 
   Future<void> fetchEvents() async {
     try {
+      final faculty =
+          await supabase
+              .from("tbl_faculty")
+              .select("department_id")
+              .eq('faculty_id', supabase.auth.currentUser!.id)
+              .single();
+
       final response = await supabase
           .from('tbl_events')
           .select()
-          .eq("event_status", 1);
+          .eq("event_status", 1)
+          .eq('department_id', faculty['department_id']);
       setState(() {
         eventList = response;
       });
