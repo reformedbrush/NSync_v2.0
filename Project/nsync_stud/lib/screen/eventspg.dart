@@ -21,22 +21,39 @@ class _StuEventsState extends State<StuEvents> {
 
   Future<void> fetchEvent() async {
     try {
+      // Get current date in a format compatible with Supabase (e.g., '2025-04-21')
+      final currentDate = DateTime.now();
+      final currentDateOnly = DateTime(
+        currentDate.year,
+        currentDate.month,
+        currentDate.day,
+      );
+      final formattedCurrentDate =
+          currentDateOnly.toIso8601String().split('T')[0];
+
+      // Fetch events where event_lastdate is on or before today and status is active
       final response = await supabase
           .from('tbl_events')
-          .select()
+          .select(
+            'event_id, event_name, event_venue, event_details, event_fordate, event_lastdate, created_at',
+          )
+          .gte('event_lastdate', formattedCurrentDate)
+          .eq('event_status', 1)
           .order('created_at', ascending: false);
-      ;
+
       List<Map<String, dynamic>> eventList = [];
       for (var data in response) {
         eventList.add({
-          'event_id': data['event_id'] ?? "",
-          'event_name': data['event_name'] ?? "",
-          'event_venue': data['event_venue'] ?? "",
-          'event_details': data['event_details'] ?? "",
-          'event_fordate': data['event_fordate'] ?? "",
-          'created_at': data['created_at'] ?? "",
+          'event_id': data['event_id'] ?? '',
+          'event_name': data['event_name'] ?? '',
+          'event_venue': data['event_venue'] ?? '',
+          'event_details': data['event_details'] ?? '',
+          'event_fordate': data['event_fordate'] ?? '',
+          'event_lastdate': data['event_lastdate'] ?? '',
+          'created_at': data['created_at'] ?? '',
         });
       }
+
       setState(() {
         _concertEvents = eventList;
       });
@@ -400,10 +417,10 @@ class _StuEventsState extends State<StuEvents> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    event['created_at'] != null
+                    event['event_fordate'] != null
                         ? DateFormat(
                           'dd-MM-yyyy',
-                        ).format(DateTime.parse(event['created_at']))
+                        ).format(DateTime.parse(event['event_fordate']))
                         : 'No date',
                     style: TextStyle(color: Colors.grey[600], fontSize: 12),
                   ),
@@ -424,35 +441,79 @@ class _StuEventsState extends State<StuEvents> {
               ),
             ),
           ),
-          // Register button
+          // Conditional button or status message
           Padding(
             padding: const EdgeInsets.only(right: 8.0),
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (context) => EventDetails(id: event['event_id']),
-                  ),
-                );
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.black,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
-              ),
-              child: const Text('View More'),
-            ),
+            child: _buildEventButtonOrStatus(context, event),
           ),
         ],
       ),
     );
+  }
+
+  // Helper method to build button or status message
+  Widget _buildEventButtonOrStatus(
+    BuildContext context,
+    Map<String, dynamic> event,
+  ) {
+    // Get current date (without time for comparison)
+    final currentDate = DateTime.now();
+    final currentDateOnly = DateTime(
+      currentDate.year,
+      currentDate.month,
+      currentDate.day,
+    );
+
+    // Parse event_fordate
+    DateTime eventDate;
+    try {
+      eventDate = DateTime.parse(event['event_fordate']);
+      eventDate = DateTime(
+        eventDate.year,
+        eventDate.month,
+        eventDate.day,
+      ); // Normalize to date only
+    } catch (e) {
+      // Handle invalid date format
+      return const Text(
+        'Invalid event date',
+        style: TextStyle(color: Colors.red, fontSize: 12),
+      );
+    }
+
+    // Check if event_fordate is the same as current date
+    final isEventToday = currentDateOnly == eventDate;
+
+    if (isEventToday) {
+      return const Text(
+        'Online Registration Closed\nSpot Registration Open',
+        style: TextStyle(
+          color: Colors.red,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+          height: 1.5,
+        ),
+        textAlign: TextAlign.center,
+      );
+    } else {
+      return ElevatedButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => EventDetails(id: event['event_id']),
+            ),
+          );
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: Colors.black,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: const Text('View More'),
+      );
+    }
   }
 }
 
