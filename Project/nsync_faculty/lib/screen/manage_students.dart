@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 
 import 'package:nsync_faculty/components/formvalidation.dart';
 import 'package:nsync_faculty/main.dart';
+import 'package:nsync_faculty/screen/student_bullkup.dart';
 
 class ManageStudents extends StatefulWidget {
   const ManageStudents({super.key});
@@ -237,6 +238,31 @@ class _ManageStudentsState extends State<ManageStudents>
                         color: Colors.white,
                       ),
                     ),
+                  ),
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Color(0xFF161616),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(5),
+                      ),
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 25,
+                        vertical: 18,
+                      ),
+                    ),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => ExcelUploadPage(),
+                        ),
+                      );
+                    },
+                    label: Text(
+                      "Bulk Upload",
+                      style: TextStyle(color: Colors.white),
+                    ),
+                    icon: Icon(Icons.add, color: Colors.white),
                   ),
                 ],
               ),

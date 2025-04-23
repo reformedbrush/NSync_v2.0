@@ -176,7 +176,7 @@ class _MyEventsState extends State<MyEvents> {
                   ).format(DateTime.parse(event['event_fordate']))
                   : 'No date',
             ),
-            Text('Status: $participantStatus'),
+            // Text('Status: $participantStatus'),
             if (event['event_lastdate'] != null)
               Text(
                 'Last Date: ${DateFormat('dd-MM-yyyy').format(DateTime.parse(event['event_lastdate']))}',

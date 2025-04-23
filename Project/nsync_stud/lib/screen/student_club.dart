@@ -93,90 +93,26 @@ class _StudentClubState extends State<StudentClub> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 255, 255, 255),
+      backgroundColor: Colors.white,
       body: SafeArea(
         child:
             clubList.isEmpty
-                ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.group_outlined,
-                        size: 60,
-                        color: Colors.grey[600],
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        "You have not joined any clubs",
-                        style: TextStyle(
-                          fontSize: 18,
-                          color: Colors.grey[600],
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
+                ? const Center(child: Text("You have not joined any clubs"))
                 : SingleChildScrollView(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 24),
-
-                      // Banner Image Container
-                      Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 16),
-                        height: 180,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(12),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(0.1),
-                              blurRadius: 8,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                          image: const DecorationImage(
-                            image: AssetImage("./assets/art.jpg"),
-                            fit: BoxFit.cover,
-                            opacity: 0.9,
-                          ),
-                        ),
-                        child: Container(
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(12),
-                            gradient: LinearGradient(
-                              colors: [
-                                Colors.black.withOpacity(0.4),
-                                Colors.transparent,
-                              ],
-                              begin: Alignment.bottomCenter,
-                              end: Alignment.topCenter,
-                            ),
-                          ),
-                          child: Center(
-                            child: Text(
-                              "MY CLUBS",
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
-                                shadows: [
-                                  Shadow(
-                                    color: Colors.black.withOpacity(0.5),
-                                    blurRadius: 4,
-                                    offset: const Offset(0, 2),
-                                  ),
-                                ],
-                              ),
-                            ),
+                      const SizedBox(height: 50),
+                      const Center(
+                        child: Text(
+                          "My Clubs",
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                      const SizedBox(height: 24),
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        padding: const EdgeInsets.all(8.0),
                         child: ListView.builder(
                           physics: const NeverScrollableScrollPhysics(),
                           shrinkWrap: true,
@@ -188,78 +124,74 @@ class _StudentClubState extends State<StudentClub> {
                                     .toString(); // Convert to string
                             final events = clubEvents[clubId] ?? [];
                             return Padding(
-                              padding: const EdgeInsets.only(bottom: 12),
-                              child: Card(
-                                elevation: 4,
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(12),
+                              padding: const EdgeInsets.all(4.0),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: const Color.fromARGB(
+                                    255,
+                                    242,
+                                    242,
+                                    242,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
                                 ),
-                                child: Container(
-                                  padding: const EdgeInsets.all(16),
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    borderRadius: BorderRadius.circular(12),
-                                    gradient: LinearGradient(
-                                      colors: [Colors.blue[50]!, Colors.white],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
+                                padding: const EdgeInsets.all(10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Padding(
+                                      padding: const EdgeInsets.all(5.0),
+                                      child: Text(
+                                        club['tbl_club']['club_name'] ??
+                                            'Unnamed Club',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 18,
+                                        ),
+                                      ),
                                     ),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Container(
-                                        width: 60,
-                                        height: 60,
-                                        decoration: BoxDecoration(
-                                          color: Colors.blue[100],
-                                          borderRadius: BorderRadius.circular(
-                                            10,
+                                    const SizedBox(height: 10),
+                                    Text(
+                                      'Upcoming Events',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                        color: Colors.grey[700],
+                                      ),
+                                    ),
+                                    const SizedBox(height: 5),
+                                    events.isEmpty
+                                        ? const Padding(
+                                          padding: EdgeInsets.symmetric(
+                                            vertical: 10,
                                           ),
-                                        ),
-                                        child: Icon(
-                                          Icons.group,
-                                          color: Colors.blue[700],
-                                          size: 30,
-                                        ),
-                                      ),
-                                      const SizedBox(width: 16),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              club['tbl_club']['club_name'] ??
-                                                  'Unknown Club',
-                                              style: const TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 18,
-                                                color: Colors.black87,
-                                              ),
+                                          child: Text(
+                                            'No upcoming events for this club',
+                                            style: TextStyle(
+                                              color: Colors.grey,
                                             ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              club['tbl_club']['description'] ??
-                                                  'No description available',
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: Colors.grey[600],
-                                              ),
-                                              maxLines: 2,
-                                              overflow: TextOverflow.ellipsis,
-                                            ),
-                                          ],
+                                          ),
+                                        )
+                                        : ListView.builder(
+                                          physics:
+                                              const NeverScrollableScrollPhysics(),
+                                          shrinkWrap: true,
+                                          itemCount: events.length,
+                                          itemBuilder: (context, eventIndex) {
+                                            final event = events[eventIndex];
+                                            return _buildEventCard(
+                                              context,
+                                              event,
+                                            );
+                                          },
                                         ),
-                                      ),
-                                    ],
-                                  ),
+                                  ],
                                 ),
                               ),
                             );
                           },
                         ),
                       ),
-                      const SizedBox(height: 80), // Space for FAB
                     ],
                   ),
                 ),
@@ -274,20 +206,58 @@ class _StudentClubState extends State<StudentClub> {
             await fetchClubs(); // Refresh clubs and events after joining
           }
         },
-        backgroundColor: Colors.black,
-        foregroundColor: Colors.white,
-        elevation: 6,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        label: const Row(
-          children: [
-            Text(
-              "Join Club",
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+        label: const Row(children: [Text("Join Club"), Icon(Icons.add)]),
+      ),
+    );
+  }
+
+  Widget _buildEventCard(BuildContext context, Map<String, dynamic> event) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 10),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.2),
+            spreadRadius: 1,
+            blurRadius: 3,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  event['event_name'] ?? 'Unnamed Event',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  event['event_venue'] ?? 'No venue',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+                Text(
+                  event['event_fordate'] != null
+                      ? DateFormat(
+                        'dd-MM-yyyy',
+                      ).format(DateTime.parse(event['event_fordate']))
+                      : 'No date',
+                  style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                ),
+              ],
             ),
-            SizedBox(width: 8),
-            Icon(Icons.add, size: 20),
-          ],
-        ),
+          ),
+          _buildEventButtonOrStatus(context, event),
+        ],
       ),
     );
   }
