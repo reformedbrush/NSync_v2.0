@@ -3,6 +3,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:excel/excel.dart';
 import 'package:nsync_faculty/main.dart';
 import 'package:uuid/uuid.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ExcelUploadPage extends StatefulWidget {
   const ExcelUploadPage({super.key});
@@ -84,14 +85,12 @@ class _ExcelUploadPageState extends State<ExcelUploadPage> {
     });
 
     try {
-      // Read Excel file
       final bytes = pickedFile!.bytes;
       if (bytes == null) throw Exception("Failed to read file bytes");
       final excel = Excel.decodeBytes(bytes);
       final sheet = excel.tables[excel.tables.keys.first];
       if (sheet == null) throw Exception("No valid sheet found in Excel file");
 
-      // Expected headers
       const expectedHeaders = [
         'student_name',
         'student_email',
@@ -101,7 +100,6 @@ class _ExcelUploadPageState extends State<ExcelUploadPage> {
         'academic_year',
       ];
 
-      // Validate headers
       final headers =
           sheet.rows.first
               .map((cell) => cell?.value?.toString().toLowerCase().trim())
@@ -112,7 +110,6 @@ class _ExcelUploadPageState extends State<ExcelUploadPage> {
         }
       }
 
-      // Process rows (skip header row)
       int successCount = 0;
       final errors = <String>[];
       const uuid = Uuid();
@@ -136,7 +133,6 @@ class _ExcelUploadPageState extends State<ExcelUploadPage> {
             continue;
           }
 
-          // Register user
           final auth = await supabase.auth.signUp(
             email: email,
             password: password,
@@ -149,7 +145,6 @@ class _ExcelUploadPageState extends State<ExcelUploadPage> {
             continue;
           }
 
-          // Insert student data
           await supabase.from('tbl_student').insert({
             'student_id': studentId,
             'student_name': rowData['student_name'] ?? '',
@@ -167,7 +162,6 @@ class _ExcelUploadPageState extends State<ExcelUploadPage> {
         }
       }
 
-      // Show result
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -178,7 +172,7 @@ class _ExcelUploadPageState extends State<ExcelUploadPage> {
       );
 
       if (successCount > 0) {
-        Navigator.pop(context, true); // Signal success to refresh student list
+        Navigator.pop(context, true);
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -220,6 +214,32 @@ class _ExcelUploadPageState extends State<ExcelUploadPage> {
                 fontSize: 16,
                 color: departmentName != null ? Colors.black : Colors.grey,
               ),
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: () async {
+                const templateUrl =
+                    'https://your-supabase-url/storage/v1/object/public/templates/students_template.xlsx';
+                if (await canLaunchUrl(Uri.parse(templateUrl))) {
+                  await launchUrl(Uri.parse(templateUrl));
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Failed to open template URL"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.grey,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+              ),
+              child: const Text("Download Template"),
             ),
             const SizedBox(height: 16),
             const Text(

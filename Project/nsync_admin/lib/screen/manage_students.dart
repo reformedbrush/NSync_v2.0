@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:nsync_admin/components/form_validation.dart';
@@ -18,8 +17,8 @@ class _ManageStudentsState extends State<ManageStudents>
   bool _isFormVisible = false;
   final Duration _animationDuration = const Duration(milliseconds: 300);
   String? selectedDept;
-  //controllers
 
+  // Controllers
   final TextEditingController _studentController = TextEditingController();
   final TextEditingController _stEmailController = TextEditingController();
   final TextEditingController _stPasswordController = TextEditingController();
@@ -29,9 +28,27 @@ class _ManageStudentsState extends State<ManageStudents>
 
   List<Map<String, dynamic>> StudList = [];
   List<Map<String, dynamic>> DeptList = [];
+  PlatformFile? pickedImage;
 
-  //register
+  @override
+  void initState() {
+    super.initState();
+    fetchDept();
+    fetchStudent();
+  }
 
+  @override
+  void dispose() {
+    _studentController.dispose();
+    _stEmailController.dispose();
+    _stPasswordController.dispose();
+    _stAdmnoController.dispose();
+    _stContactController.dispose();
+    _stAcdYearController.dispose();
+    super.dispose();
+  }
+
+  // Register
   Future<void> Register() async {
     try {
       final auth = await supabase.auth.signUp(
@@ -39,60 +56,61 @@ class _ManageStudentsState extends State<ManageStudents>
         email: _stEmailController.text,
       );
       final uid = auth.user!.id;
-      if (uid.isNotEmpty || uid != "") {
-        studentInsert(uid);
+      if (uid.isNotEmpty) {
+        await studentInsert(uid);
       }
     } catch (e) {
-      print("AUTH ERROR: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error registering student: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
-  // insert
-
+  // Insert
   Future<void> studentInsert(final id) async {
     try {
-      String Name = _studentController.text;
+      String name = _studentController.text;
       String admissionNo = _stAdmnoController.text;
-      String Email = _stEmailController.text;
-      String Password = _stPasswordController.text;
-      String Phone = _stContactController.text;
+      String email = _stEmailController.text;
+      String password = _stPasswordController.text;
+      String phone = _stContactController.text;
       String academicYear = _stAcdYearController.text;
       String? url = await photoUpload(id);
 
       if (selectedDept == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              "Please Select A Department",
-              style: TextStyle(color: Colors.white),
-            ),
+            content: Text("Please select a department"),
             backgroundColor: Colors.red,
           ),
         );
         return;
       }
+
       await supabase.from('tbl_student').insert({
         'student_id': id,
-        'student_name': Name,
+        'student_name': name,
         'student_admno': admissionNo,
-        'student_email': Email,
-        'student_password': Password,
-        'student_contact': Phone,
+        'student_email': email,
+        'student_password': password,
+        'student_contact': phone,
         'department_id': selectedDept,
         'academic_year': academicYear,
         'student_photo': url,
+        'student_status': 1, // Default status for new students
       });
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            "Student Data Inserted Sucessfully",
-            style: TextStyle(color: Colors.white),
-          ),
+          content: Text("Student data inserted successfully"),
           backgroundColor: Colors.green,
         ),
       );
 
-      fetchStudent();
+      await fetchStudent();
 
       _studentController.clear();
       _stAdmnoController.clear();
@@ -102,24 +120,32 @@ class _ManageStudentsState extends State<ManageStudents>
       _stAcdYearController.clear();
       setState(() {
         selectedDept = null;
+        pickedImage = null;
       });
     } catch (e) {
-      print("ERROR INSERTING DATA: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error inserting student: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
-  //select
-
+  // Select
   Future<void> fetchDept() async {
     try {
       final response = await supabase.from('tbl_department').select();
-      if (response.isNotEmpty) {
-        setState(() {
-          DeptList = response;
-        });
-      }
+      setState(() {
+        DeptList = List<Map<String, dynamic>>.from(response);
+      });
     } catch (e) {
-      print("ERROR FETCHING DEPT: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error fetching departments: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -127,33 +153,98 @@ class _ManageStudentsState extends State<ManageStudents>
     try {
       final response = await supabase
           .from('tbl_student')
-          .select('*,tbl_department(*)');
+          .select('*, tbl_department(department_name)');
       setState(() {
-        StudList = response;
+        StudList = List<Map<String, dynamic>>.from(response);
+        print("Fetched ${StudList.length} students"); // Debug
       });
     } catch (e) {
-      print("ERROR FETCHING: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error fetching students: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      setState(() {
+        StudList = [];
+      });
     }
   }
 
-  // delete
-
+  // Delete
   Future<void> deltStudent(String did) async {
     try {
       await supabase.from('tbl_student').delete().eq('student_id', did);
-      fetchStudent();
+      await fetchStudent();
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Student deleted successfully"),
+          backgroundColor: Colors.green,
+        ),
+      );
     } catch (e) {
-      print("ERROR DELETING: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting student: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
-  // file upload
+  // Block
+  Future<void> blockStudent(String did, String name) async {
+    try {
+      await supabase
+          .from('tbl_student')
+          .update({'student_status': 0})
+          .eq('student_id', did);
+      await fetchStudent();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("$name blocked successfully"),
+          backgroundColor: Colors.orange,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error blocking student: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
-  PlatformFile? pickedImage;
+  // Unblock
+  Future<void> unblockStudent(String did, String name) async {
+    try {
+      await supabase
+          .from('tbl_student')
+          .update({'student_status': 1})
+          .eq('student_id', did);
+      await fetchStudent();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("$name unblocked successfully"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error unblocking student: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
+  // File upload
   Future<void> handleImagePick() async {
     FilePickerResult? result = await FilePicker.platform.pickFiles(
       allowMultiple: false,
+      type: FileType.image,
     );
     if (result != null) {
       setState(() {
@@ -168,31 +259,22 @@ class _ManageStudentsState extends State<ManageStudents>
 
       final bucketName = 'Student';
       final filePath = "$uid-${pickedImage!.name}";
-
-      // Upload the file
       await supabase.storage
           .from(bucketName)
           .uploadBinary(filePath, pickedImage!.bytes!);
-
-      // Get the public URL
-      final String publicUrl = supabase.storage
+      final publicUrl = supabase.storage
           .from(bucketName)
           .getPublicUrl(filePath);
-
-      print("Uploaded image URL: $publicUrl"); // For debugging
       return publicUrl;
     } catch (e) {
-      print("ERROR PHOTO UPLOAD: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error uploading photo: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
       return null;
     }
-  }
-
-  @override
-  void initState() {
-    // TODO: implement initState
-    super.initState();
-    fetchDept();
-    fetchStudent();
   }
 
   @override
@@ -202,7 +284,7 @@ class _ManageStudentsState extends State<ManageStudents>
         color: Colors.white,
         height: 2000,
         child: Padding(
-          padding: EdgeInsets.all(18),
+          padding: const EdgeInsets.all(18),
           child: Column(
             children: [
               Row(
@@ -212,24 +294,23 @@ class _ManageStudentsState extends State<ManageStudents>
                     padding: const EdgeInsets.all(10.0),
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Color(0xFF161616),
+                        backgroundColor: const Color(0xFF161616),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(5),
                         ),
-                        padding: EdgeInsets.symmetric(
+                        padding: const EdgeInsets.symmetric(
                           horizontal: 25,
                           vertical: 18,
                         ),
                       ),
                       onPressed: () {
                         setState(() {
-                          _isFormVisible =
-                              !_isFormVisible; // Toggle form visibility
+                          _isFormVisible = !_isFormVisible;
                         });
                       },
                       label: Text(
                         _isFormVisible ? "Cancel" : "Add Student",
-                        style: TextStyle(color: Colors.white),
+                        style: const TextStyle(color: Colors.white),
                       ),
                       icon: Icon(
                         _isFormVisible ? Icons.cancel : Icons.add,
@@ -258,7 +339,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                           pickedImage == null
                                               ? GestureDetector(
                                                 onTap: handleImagePick,
-                                                child: Icon(
+                                                child: const Icon(
                                                   Icons.add_a_photo,
                                                   color: Colors.blue,
                                                   size: 50,
@@ -296,7 +377,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                   children: [
                                     Expanded(
                                       child: Padding(
-                                        padding: EdgeInsets.all(8),
+                                        padding: const EdgeInsets.all(8),
                                         child: TextFormField(
                                           controller: _studentController,
                                           validator:
@@ -304,7 +385,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                                   FormValidation.validateName(
                                                     value,
                                                   ),
-                                          decoration: InputDecoration(
+                                          decoration: const InputDecoration(
                                             hintText: "Name",
                                             enabledBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
@@ -318,7 +399,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                             ),
                                             errorBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
-                                                color: Colors.blue,
+                                                color: Colors.red,
                                               ),
                                             ),
                                             focusedErrorBorder:
@@ -333,11 +414,11 @@ class _ManageStudentsState extends State<ManageStudents>
                                     ),
                                     Expanded(
                                       child: Padding(
-                                        padding: EdgeInsets.all(8),
+                                        padding: const EdgeInsets.all(8),
                                         child: TextFormField(
                                           controller: _stAdmnoController,
-                                          decoration: InputDecoration(
-                                            hintText: "Admission_No",
+                                          decoration: const InputDecoration(
+                                            hintText: "Admission No",
                                             enabledBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
                                                 color: Colors.grey,
@@ -348,6 +429,17 @@ class _ManageStudentsState extends State<ManageStudents>
                                                 color: Colors.blue,
                                               ),
                                             ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.red,
+                                              ),
+                                            ),
+                                            focusedErrorBorder:
+                                                OutlineInputBorder(
+                                                  borderSide: BorderSide(
+                                                    color: Colors.blue,
+                                                  ),
+                                                ),
                                           ),
                                         ),
                                       ),
@@ -358,7 +450,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                   children: [
                                     Expanded(
                                       child: Padding(
-                                        padding: EdgeInsets.all(8),
+                                        padding: const EdgeInsets.all(8),
                                         child: TextFormField(
                                           controller: _stEmailController,
                                           validator:
@@ -366,7 +458,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                                   FormValidation.validateEmail(
                                                     value,
                                                   ),
-                                          decoration: InputDecoration(
+                                          decoration: const InputDecoration(
                                             hintText: "Email",
                                             enabledBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
@@ -380,7 +472,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                             ),
                                             errorBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
-                                                color: Colors.blue,
+                                                color: Colors.red,
                                               ),
                                             ),
                                             focusedErrorBorder:
@@ -395,7 +487,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                     ),
                                     Expanded(
                                       child: Padding(
-                                        padding: EdgeInsets.all(8),
+                                        padding: const EdgeInsets.all(8),
                                         child: TextFormField(
                                           controller: _stPasswordController,
                                           validator:
@@ -403,7 +495,8 @@ class _ManageStudentsState extends State<ManageStudents>
                                                   FormValidation.validatePassword(
                                                     value,
                                                   ),
-                                          decoration: InputDecoration(
+                                          obscureText: true,
+                                          decoration: const InputDecoration(
                                             hintText: "Password",
                                             enabledBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
@@ -417,7 +510,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                             ),
                                             errorBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
-                                                color: Colors.blue,
+                                                color: Colors.red,
                                               ),
                                             ),
                                             focusedErrorBorder:
@@ -444,7 +537,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                                     value,
                                                   ),
                                           controller: _stContactController,
-                                          decoration: InputDecoration(
+                                          decoration: const InputDecoration(
                                             hintText: "Phone",
                                             enabledBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
@@ -458,7 +551,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                             ),
                                             errorBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
-                                                color: Colors.blue,
+                                                color: Colors.red,
                                               ),
                                             ),
                                             focusedErrorBorder:
@@ -473,11 +566,11 @@ class _ManageStudentsState extends State<ManageStudents>
                                     ),
                                     Expanded(
                                       child: Padding(
-                                        padding: EdgeInsets.all(8),
+                                        padding: const EdgeInsets.all(8),
                                         child: TextFormField(
                                           controller: _stAcdYearController,
-                                          decoration: InputDecoration(
-                                            hintText: "Academic_Year",
+                                          decoration: const InputDecoration(
+                                            hintText: "Academic Year",
                                             enabledBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
                                                 color: Colors.grey,
@@ -490,7 +583,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                             ),
                                             errorBorder: OutlineInputBorder(
                                               borderSide: BorderSide(
-                                                color: Colors.blue,
+                                                color: Colors.red,
                                               ),
                                             ),
                                             focusedErrorBorder:
@@ -509,7 +602,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                   children: [
                                     Expanded(
                                       child: Padding(
-                                        padding: EdgeInsets.all(8),
+                                        padding: const EdgeInsets.all(8),
                                         child: DropdownButtonFormField<String>(
                                           validator:
                                               (value) =>
@@ -534,15 +627,39 @@ class _ManageStudentsState extends State<ManageStudents>
                                               selectedDept = newValue;
                                             });
                                           },
+                                          decoration: const InputDecoration(
+                                            enabledBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.grey,
+                                              ),
+                                            ),
+                                            focusedBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.blue,
+                                              ),
+                                            ),
+                                            errorBorder: OutlineInputBorder(
+                                              borderSide: BorderSide(
+                                                color: Colors.red,
+                                              ),
+                                            ),
+                                            focusedErrorBorder:
+                                                OutlineInputBorder(
+                                                  borderSide: BorderSide(
+                                                    color: Colors.blue,
+                                                  ),
+                                                ),
+                                          ),
                                         ),
                                       ),
                                     ),
                                   ],
                                 ),
+                                const SizedBox(height: 20),
                                 ElevatedButton(
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Color(0xFF017AFF),
-                                    padding: EdgeInsets.symmetric(
+                                    backgroundColor: const Color(0xFF017AFF),
+                                    padding: const EdgeInsets.symmetric(
                                       horizontal: 70,
                                       vertical: 22,
                                     ),
@@ -550,125 +667,293 @@ class _ManageStudentsState extends State<ManageStudents>
                                       borderRadius: BorderRadius.circular(5),
                                     ),
                                   ),
-                                  onPressed: () {
-                                    Register();
-                                  },
-                                  child: Text(
+                                  onPressed: Register,
+                                  child: const Text(
                                     "Insert",
                                     style: TextStyle(color: Colors.white),
                                   ),
                                 ),
-                                SizedBox(height: 20),
+                                const SizedBox(height: 20),
                               ],
                             ),
                           ),
                         )
                         : Container(),
               ),
-              Container(
-                child: Center(
-                  child: Text(
-                    "Students Data",
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
-                  ),
+              const Center(
+                child: Text(
+                  "Students Data",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 30),
                 ),
               ),
-              Container(
-                child: Padding(
-                  padding: EdgeInsets.all(8),
-                  child: DataTable(
-                    columns: [
-                      DataColumn(label: Text("SL.No")),
-                      DataColumn(label: Text("Photo")),
-                      DataColumn(label: Text('Name')),
-                      DataColumn(label: Text('Adm No.')),
-                      DataColumn(label: Text('Email')),
-                      DataColumn(label: Text('Contact No.')),
-                      DataColumn(label: Text('Department')),
-                      DataColumn(label: Text('Academic Year')),
-                      DataColumn(label: Text("Delete")),
-                    ],
-                    rows:
-                        StudList.asMap().entries.map((entry) {
-                          return DataRow(
-                            cells: [
-                              DataCell(Text((entry.key + 1000).toString())),
-                              DataCell(
-                                Container(
-                                  width: 40,
-                                  height: 40,
-                                  child:
-                                      entry.value['student_photo'] != null
-                                          ? ClipRRect(
-                                            borderRadius: BorderRadius.circular(
-                                              20,
+              StudList.isEmpty
+                  ? const Center(child: Text("No students found"))
+                  : SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: DataTable(
+                      columnSpacing: 16,
+                      columns: const [
+                        DataColumn(label: Text("SL.No")),
+                        DataColumn(label: Text("Photo")),
+                        DataColumn(label: Text("Name")),
+                        DataColumn(label: Text("Adm No.")),
+                        DataColumn(label: Text("Email")),
+                        DataColumn(label: Text("Contact No.")),
+                        DataColumn(label: Text("Department")),
+                        DataColumn(label: Text("Academic Year")),
+                        DataColumn(label: Text("Status")),
+                        DataColumn(label: Text("Actions")),
+                      ],
+                      rows:
+                          StudList.asMap().entries.map((entry) {
+                            final student = entry.value;
+                            return DataRow(
+                              cells: [
+                                DataCell(Text((entry.key + 1000).toString())),
+                                DataCell(
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    child:
+                                        student['student_photo'] != null
+                                            ? ClipRRect(
+                                              borderRadius:
+                                                  BorderRadius.circular(20),
+                                              child: Image.network(
+                                                student['student_photo'],
+                                                fit: BoxFit.cover,
+                                                errorBuilder: (
+                                                  context,
+                                                  error,
+                                                  stackTrace,
+                                                ) {
+                                                  print("Image Error: $error");
+                                                  return CircleAvatar(
+                                                    backgroundColor:
+                                                        Colors.grey[300],
+                                                    child: Icon(
+                                                      Icons.person,
+                                                      color: Colors.grey[600],
+                                                    ),
+                                                  );
+                                                },
+                                              ),
+                                            )
+                                            : CircleAvatar(
+                                              backgroundColor: Colors.grey[300],
+                                              child: Icon(
+                                                Icons.person,
+                                                color: Colors.grey[600],
+                                              ),
                                             ),
-                                            child: Image.network(
-                                              entry
-                                                  .value['student_photo'], // Direct URL from database
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (
-                                                context,
-                                                error,
-                                                stackTrace,
-                                              ) {
-                                                print(
-                                                  "Image Error: $error",
-                                                ); // For debugging
-                                                return CircleAvatar(
-                                                  backgroundColor:
-                                                      Colors.grey[300],
-                                                  child: Icon(
-                                                    Icons.person,
-                                                    color: Colors.grey[600],
-                                                  ),
-                                                );
-                                              },
-                                            ),
-                                          )
-                                          : CircleAvatar(
-                                            backgroundColor: Colors.grey[300],
-                                            child: Icon(
-                                              Icons.person,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                ),
-                              ),
-                              DataCell(Text(entry.value['student_name'])),
-                              DataCell(
-                                Text(entry.value['student_admno'].toString()),
-                              ),
-                              DataCell(Text(entry.value['student_email'])),
-                              DataCell(
-                                Text(entry.value['student_contact'].toString()),
-                              ),
-                              DataCell(
-                                Text(
-                                  entry
-                                      .value['tbl_department']['department_name'],
-                                ),
-                              ),
-                              DataCell(Text(entry.value['academic_year'])),
-                              DataCell(
-                                IconButton(
-                                  icon: const Icon(
-                                    Icons.delete,
-                                    color: Colors.red,
                                   ),
-                                  onPressed: () {
-                                    deltStudent(
-                                      entry.value['student_id'].toString(),
-                                    );
-                                  },
                                 ),
-                              ),
-                            ],
-                          );
-                        }).toList(),
+                                DataCell(
+                                  Container(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 150,
+                                    ),
+                                    child: Text(
+                                      student['student_name'] ?? '',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  Container(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 100,
+                                    ),
+                                    child: Text(
+                                      student['student_admno']?.toString() ??
+                                          '',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  Container(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 200,
+                                    ),
+                                    child: Text(
+                                      student['student_email'] ?? '',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  Container(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 120,
+                                    ),
+                                    child: Text(
+                                      student['student_contact']?.toString() ??
+                                          '',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  Container(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 150,
+                                    ),
+                                    child: Text(
+                                      student['tbl_department']?['department_name'] ??
+                                          '',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  Container(
+                                    constraints: const BoxConstraints(
+                                      maxWidth: 100,
+                                    ),
+                                    child: Text(
+                                      student['academic_year'] ?? '',
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  Text(
+                                    student['student_status'] == -1
+                                        ? 'Blocked'
+                                        : 'Active',
+                                    style: TextStyle(
+                                      color:
+                                          student['student_status'] == -1
+                                              ? Colors.red
+                                              : Colors.green,
+                                    ),
+                                  ),
+                                ),
+                                DataCell(
+                                  Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(
+                                          student['student_status'] == -1
+                                              ? Icons.lock_open
+                                              : Icons.block,
+                                          color:
+                                              student['student_status'] == -1
+                                                  ? Colors.green
+                                                  : Colors.orange,
+                                        ),
+                                        tooltip:
+                                            student['student_status'] == -1
+                                                ? 'Unblock'
+                                                : 'Block',
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder:
+                                                (context) => AlertDialog(
+                                                  title: Text(
+                                                    student['student_status'] ==
+                                                            -1
+                                                        ? "Unblock Student"
+                                                        : "Block Student",
+                                                  ),
+                                                  content: Text(
+                                                    "Are you sure you want to ${student['student_status'] == -1 ? 'unblock' : 'block'} ${student['student_name']}?",
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed:
+                                                          () => Navigator.pop(
+                                                            context,
+                                                          ),
+                                                      child: const Text(
+                                                        "Cancel",
+                                                      ),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        if (student['student_status'] ==
+                                                            -1) {
+                                                          unblockStudent(
+                                                            student['student_id']
+                                                                .toString(),
+                                                            student['student_name'],
+                                                          );
+                                                        } else {
+                                                          blockStudent(
+                                                            student['student_id']
+                                                                .toString(),
+                                                            student['student_name'],
+                                                          );
+                                                        }
+                                                        Navigator.pop(context);
+                                                      },
+                                                      child: Text(
+                                                        student['student_status'] ==
+                                                                -1
+                                                            ? "Unblock"
+                                                            : "Block",
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                          );
+                                        },
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(
+                                          Icons.delete,
+                                          color: Colors.red,
+                                        ),
+                                        tooltip: 'Delete',
+                                        onPressed: () {
+                                          showDialog(
+                                            context: context,
+                                            builder:
+                                                (context) => AlertDialog(
+                                                  title: const Text(
+                                                    "Delete Student",
+                                                  ),
+                                                  content: Text(
+                                                    "Are you sure you want to delete ${student['student_name']}?",
+                                                  ),
+                                                  actions: [
+                                                    TextButton(
+                                                      onPressed:
+                                                          () => Navigator.pop(
+                                                            context,
+                                                          ),
+                                                      child: const Text(
+                                                        "Cancel",
+                                                      ),
+                                                    ),
+                                                    TextButton(
+                                                      onPressed: () {
+                                                        deltStudent(
+                                                          student['student_id']
+                                                              .toString(),
+                                                        );
+                                                        Navigator.pop(context);
+                                                      },
+                                                      child: const Text(
+                                                        "Delete",
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                          );
+                                        },
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList(),
+                    ),
                   ),
-                ),
-              ),
             ],
           ),
         ),

@@ -29,6 +29,7 @@ class _Login1State extends State<Login1> {
               .from("tbl_student")
               .select()
               .eq("student_id", uid)
+              .eq('student_status', 1)
               .maybeSingle();
 
       if (res != null) {
