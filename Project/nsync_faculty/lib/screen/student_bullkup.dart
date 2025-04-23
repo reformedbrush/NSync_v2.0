@@ -4,6 +4,7 @@ import 'package:excel/excel.dart';
 import 'package:nsync_faculty/main.dart';
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class ExcelUploadPage extends StatefulWidget {
   const ExcelUploadPage({super.key});
@@ -40,8 +41,15 @@ class _ExcelUploadPageState extends State<ExcelUploadPage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error fetching faculty department: $e'),
-          backgroundColor: Colors.red,
+          content: Text(
+            'Error fetching department: $e',
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     }
@@ -63,18 +71,32 @@ class _ExcelUploadPageState extends State<ExcelUploadPage> {
   Future<void> uploadAndProcessExcel() async {
     if (departmentId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Failed to load department. Please try again."),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: Text(
+            "Failed to load department. Please try again.",
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
       return;
     }
     if (pickedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text("Please select an Excel file"),
-          backgroundColor: Colors.red,
+        SnackBar(
+          content: Text(
+            "Please select an Excel file",
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
       return;
@@ -166,8 +188,13 @@ class _ExcelUploadPageState extends State<ExcelUploadPage> {
         SnackBar(
           content: Text(
             "Uploaded $successCount students successfully${errors.isNotEmpty ? '. Errors: ${errors.join('; ')}' : ''}",
+            style: GoogleFonts.poppins(),
           ),
           backgroundColor: errors.isEmpty ? Colors.green : Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
 
@@ -177,8 +204,15 @@ class _ExcelUploadPageState extends State<ExcelUploadPage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error processing Excel file: $e"),
-          backgroundColor: Colors.red,
+          content: Text(
+            "Error processing Excel file: $e",
+            style: GoogleFonts.poppins(),
+          ),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     } finally {
@@ -192,103 +226,273 @@ class _ExcelUploadPageState extends State<ExcelUploadPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(
-        title: const Text('Upload Student Data'),
-        backgroundColor: Colors.white,
+        title: Text(
+          'Upload Student Data',
+          style: GoogleFonts.poppins(
+            fontSize: 20,
+            fontWeight: FontWeight.w600,
+            color: Colors.white,
+          ),
+        ),
+        backgroundColor: const Color.fromARGB(255, 0, 0, 0),
         elevation: 0,
         centerTitle: true,
+        iconTheme: const IconThemeData(color: Colors.white),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Department',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              departmentName ?? 'Loading department...',
-              style: TextStyle(
-                fontSize: 16,
-                color: departmentName != null ? Colors.black : Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: () async {
-                const templateUrl =
-                    'https://your-supabase-url/storage/v1/object/public/templates/students_template.xlsx';
-                if (await canLaunchUrl(Uri.parse(templateUrl))) {
-                  await launchUrl(Uri.parse(templateUrl));
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text("Failed to open template URL"),
-                      backgroundColor: Colors.red,
+      body: Center(
+        child: Container(
+          constraints: const BoxConstraints(maxWidth: 600),
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Department',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          departmentName ?? 'Loading department...',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color:
+                                departmentName != null
+                                    ? Colors.black87
+                                    : Colors.grey[600],
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                }
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.grey,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
+                  ),
                 ),
-              ),
-              child: const Text("Download Template"),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Upload Excel File',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              onPressed: handleFilePick,
-              icon: const Icon(Icons.upload_file),
-              label: const Text("Choose Excel File"),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 20,
-                  vertical: 12,
+                const SizedBox(height: 20),
+                Card(
+                  elevation: 4,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Excel File Upload',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.grey[800],
+                          ),
+                        ),
+                        const SizedBox(height: 16),
+                        GestureDetector(
+                          onTap: handleFilePick,
+                          child: Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 16,
+                              horizontal: 20,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [
+                                  Color.fromARGB(255, 0, 0, 0),
+                                  Color.fromARGB(255, 34, 34, 34),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(10),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: const Color.fromARGB(
+                                    255,
+                                    44,
+                                    44,
+                                    44,
+                                  ).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Icon(
+                                  Icons.upload_file,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  pickedFile == null
+                                      ? 'Choose Excel File'
+                                      : 'Change File',
+                                  style: GoogleFonts.poppins(
+                                    fontSize: 16,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                        if (pickedFile != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 12),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.description,
+                                  color: Colors.grey,
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    pickedFile!.name,
+                                    style: GoogleFonts.poppins(
+                                      fontSize: 14,
+                                      color: Colors.grey[700],
+                                    ),
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            if (pickedFile != null)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8.0),
-                child: Text(
-                  "Selected: ${pickedFile!.name}",
-                  style: const TextStyle(color: Colors.grey),
-                ),
-              ),
-            const SizedBox(height: 16),
-            isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : ElevatedButton(
-                  onPressed: uploadAndProcessExcel,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF017AFF),
+                const SizedBox(height: 20),
+                GestureDetector(
+                  onTap: () async {
+                    const templateUrl =
+                        'https://gxomwkpwoxmhdtdsxjph.supabase.co/storage/v1/object/public/template//template.xlsx';
+                    if (await canLaunchUrl(Uri.parse(templateUrl))) {
+                      await launchUrl(Uri.parse(templateUrl));
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            "Failed to open template URL",
+                            style: GoogleFonts.poppins(),
+                          ),
+                          backgroundColor: Colors.redAccent,
+                          behavior: SnackBarBehavior.floating,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                      );
+                    }
+                  },
+                  child: Container(
+                    width: double.infinity,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 70,
-                      vertical: 22,
+                      vertical: 16,
+                      horizontal: 20,
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.grey.withOpacity(0.3),
+                          blurRadius: 8,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
-                  ),
-                  child: const Text(
-                    "Upload and Insert",
-                    style: TextStyle(color: Colors.white),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.download, color: Colors.black87),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Download Template',
+                          style: GoogleFonts.poppins(
+                            fontSize: 16,
+                            color: Colors.black87,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-          ],
+                const SizedBox(height: 30),
+                isLoading
+                    ? const Center(
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color.fromARGB(255, 61, 61, 61),
+                        ),
+                      ),
+                    )
+                    : GestureDetector(
+                      onTap: uploadAndProcessExcel,
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 18,
+                          horizontal: 20,
+                        ),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color.fromARGB(255, 0, 0, 0),
+                              Color.fromARGB(255, 36, 36, 36),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(10),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color.fromARGB(
+                                255,
+                                49,
+                                49,
+                                49,
+                              ).withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          'Upload and Insert',
+                          textAlign: TextAlign.center,
+                          style: GoogleFonts.poppins(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+              ],
+            ),
+          ),
         ),
       ),
     );

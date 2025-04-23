@@ -1,4 +1,3 @@
-import 'package:nsync_faculty/screen/facultyhome.dart';
 import 'package:nsync_faculty/screen/login.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
