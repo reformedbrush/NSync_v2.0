@@ -3,6 +3,7 @@ import 'package:carousel_slider/carousel_slider.dart';
 import 'package:nsync_stud/main.dart';
 import 'package:intl/intl.dart';
 import 'package:nsync_stud/screen/event_details.dart';
+import 'package:nsync_stud/screen/newsletter.dart';
 
 class StuEvents extends StatefulWidget {
   const StuEvents({super.key});
@@ -68,8 +69,11 @@ class _StuEventsState extends State<StuEvents> {
       List<Map<String, dynamic>> newsList = [];
       for (var data in response) {
         newsList.add({
+          'id': data['id'] ?? 0,
           'title': data['newsletter_title'] ?? "",
+          'content': data['newsletter_content'] ?? "",
           'image': data['newsletter_image'] ?? "",
+          'author': data['newsletter_author'] ?? "",
           'date': data['created_at'] ?? "",
         });
       }
@@ -260,8 +264,21 @@ class _StuEventsState extends State<StuEvents> {
                 scrollDirection: Axis.horizontal,
               ),
               itemBuilder: (BuildContext context, int index, int realIndex) {
-                final event = _posterNews[index];
-                return _buildPosterCard(event);
+                final news = _posterNews[index];
+                print("news$news");
+
+                return InkWell(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder:
+                            (context) => NewsletterDetails(newsId: news['id']),
+                      ),
+                    );
+                  },
+                  child: _buildPosterCard(news),
+                );
               },
             ),
         if (_posterNews.isNotEmpty)
@@ -292,13 +309,13 @@ class _StuEventsState extends State<StuEvents> {
     );
   }
 
-  Widget _buildPosterCard(Map<String, dynamic> event) {
+  Widget _buildPosterCard(Map<String, dynamic> news) {
     return Container(
       margin: const EdgeInsets.all(5.0),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(15),
         image: DecorationImage(
-          image: NetworkImage(event['image'] ?? ""),
+          image: NetworkImage(news['image'] ?? ""),
           fit: BoxFit.cover,
         ),
       ),
@@ -335,7 +352,7 @@ class _StuEventsState extends State<StuEvents> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    event['title'],
+                    news['title'],
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
@@ -343,10 +360,10 @@ class _StuEventsState extends State<StuEvents> {
                     ),
                   ),
                   Text(
-                    event['date'] != null
+                    news['date'] != null
                         ? DateFormat(
                           'dd-MM-yyyy',
-                        ).format(DateTime.parse(event['date']))
+                        ).format(DateTime.parse(news['date']))
                         : 'No date',
                     style: const TextStyle(color: Colors.white70, fontSize: 12),
                   ),
@@ -514,47 +531,5 @@ class _StuEventsState extends State<StuEvents> {
         child: const Text('View More'),
       );
     }
-  }
-}
-
-class EventCard extends StatelessWidget {
-  final String date, title, location;
-  const EventCard({
-    super.key,
-    required this.date,
-    required this.title,
-    required this.location,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: const EdgeInsets.all(12.0),
-        child: Row(
-          children: [
-            Container(
-              padding: EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.orange,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(date, style: TextStyle(fontWeight: FontWeight.bold)),
-            ),
-            SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title, style: TextStyle(fontWeight: FontWeight.bold)),
-                  Text(location, style: TextStyle(color: Colors.grey)),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 }

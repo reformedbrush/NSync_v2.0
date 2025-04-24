@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:nsync_faculty/main.dart';
 import 'package:nsync_faculty/screen/club_hostev.dart';
+import 'package:nsync_faculty/screen/participantlist.dart'; // New import
 
 class MyClub extends StatefulWidget {
   const MyClub({super.key});
@@ -110,17 +111,30 @@ class _MyClubState extends State<MyClub> {
                   itemCount: eventlist.length,
                   itemBuilder: (context, index) {
                     final event = eventlist[index];
-                    return Card(
-                      margin: const EdgeInsets.symmetric(vertical: 10),
-                      child: ListTile(
-                        title: Text(
-                          event['event_name'] ?? 'Unnamed Event',
-                          style: const TextStyle(fontWeight: FontWeight.bold),
+                    return InkWell(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => EventParticipants(
+                                  eventId: event['event_id'],
+                                ),
+                          ),
+                        );
+                      },
+                      child: Card(
+                        margin: const EdgeInsets.symmetric(vertical: 10),
+                        child: ListTile(
+                          title: Text(
+                            event['event_name'] ?? 'Unnamed Event',
+                            style: const TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          subtitle: Text(
+                            'Club: ${event['tbl_club']?['club_name'] ?? 'Unknown'}\nDate: ${event['event_fordate'] ?? 'N/A'}',
+                          ),
+                          trailing: const Icon(Icons.event),
                         ),
-                        subtitle: Text(
-                          'Club: ${event['tbl_club']?['club_name'] ?? 'Unknown'}\nDate: ${event['event_fordate'] ?? 'N/A'}',
-                        ),
-                        trailing: const Icon(Icons.event),
                       ),
                     );
                   },

@@ -204,39 +204,38 @@ class _MyProfileState extends State<MyProfile> {
 
                         const SizedBox(height: 16),
 
-                        Row(
-                          children: [
-                            Expanded(
-                              child: ElevatedButton(
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.black,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 15,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                    side: BorderSide(
-                                      color: Colors.grey.shade300,
-                                    ),
-                                  ),
-                                ),
-                                onPressed: () {
-                                  // Edit profile
-                                },
-                                child: const Text(
-                                  "Edit Profile",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 16),
-
+                        // Row(
+                        //   children: [
+                        //     Expanded(
+                        //       child: ElevatedButton(
+                        //         style: ElevatedButton.styleFrom(
+                        //           backgroundColor: Colors.black,
+                        //           foregroundColor: Colors.white,
+                        //           padding: const EdgeInsets.symmetric(
+                        //             vertical: 15,
+                        //           ),
+                        //           shape: RoundedRectangleBorder(
+                        //             borderRadius: BorderRadius.circular(10),
+                        //             side: BorderSide(
+                        //               color: Colors.grey.shade300,
+                        //             ),
+                        //           ),
+                        //         ),
+                        //         onPressed: () {
+                        //           // Edit profile
+                        //         },
+                        //         child: const Text(
+                        //           "Edit Profile",
+                        //           style: TextStyle(
+                        //             fontSize: 16,
+                        //             fontWeight: FontWeight.bold,
+                        //           ),
+                        //         ),
+                        //       ),
+                        //     ),
+                        //   ],
+                        // ),
+                        // const SizedBox(height: 16),
                         Row(
                           children: [
                             Expanded(
@@ -255,12 +254,12 @@ class _MyProfileState extends State<MyProfile> {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => AppFeedback(),
+                                      builder: (context) => AppComplaint(),
                                     ),
                                   );
                                 },
                                 child: const Text(
-                                  "Feedback",
+                                  "Complaints",
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,

@@ -1,20 +1,60 @@
 import 'package:flutter/material.dart';
 import 'package:nsync_stud/main.dart'; // Assuming supabase is initialized here
 
-class AppFeedback extends StatefulWidget {
-  const AppFeedback({super.key});
+class AppComplaint extends StatefulWidget {
+  const AppComplaint({super.key});
 
   @override
-  State<AppFeedback> createState() => _AppFeedbackState();
+  State<AppComplaint> createState() => _AppComplaintState();
 }
 
-class _AppFeedbackState extends State<AppFeedback> {
+class _AppComplaintState extends State<AppComplaint> {
   final TextEditingController _titleController = TextEditingController();
-  final TextEditingController _descriptionController = TextEditingController();
-  double _rating = 3.0; // Default rating
-  bool _isSubmitting = false; // Loading state
+  final TextEditingController _contentController = TextEditingController();
+  bool _isSubmitting = false; // Loading state for form submission
+  List<Map<String, dynamic>> _complaints = []; // List to store complaints
+  bool _isLoadingComplaints = true; // Loading state for fetching complaints
+  String? _errorMessage; // Error message for fetching complaints
 
-  Future<void> submitFeedback() async {
+  @override
+  void initState() {
+    super.initState();
+    _fetchComplaints(); // Fetch complaints when the widget is initialized
+  }
+
+  Future<void> _fetchComplaints() async {
+    setState(() {
+      _isLoadingComplaints = true;
+      _errorMessage = null;
+    });
+
+    try {
+      if (supabase.auth.currentUser == null) {
+        setState(() {
+          _errorMessage = "You must be logged in to view complaints";
+          _isLoadingComplaints = false;
+        });
+        return;
+      }
+
+      final response = await supabase
+          .from('tbl_complaint')
+          .select()
+          .eq('student_id', supabase.auth.currentUser!.id);
+
+      setState(() {
+        _complaints = List<Map<String, dynamic>>.from(response);
+        _isLoadingComplaints = false;
+      });
+    } catch (e) {
+      setState(() {
+        _errorMessage = "Error fetching complaints: $e";
+        _isLoadingComplaints = false;
+      });
+    }
+  }
+
+  Future<void> submitComplaint() async {
     if (_isSubmitting) return; // Prevent multiple submissions
 
     setState(() {
@@ -22,8 +62,7 @@ class _AppFeedbackState extends State<AppFeedback> {
     });
 
     try {
-      if (_titleController.text.isEmpty ||
-          _descriptionController.text.isEmpty) {
+      if (_titleController.text.isEmpty || _contentController.text.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
@@ -40,7 +79,7 @@ class _AppFeedbackState extends State<AppFeedback> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              "You must be logged in to submit feedback",
+              "You must be logged in to submit a complaint",
               style: TextStyle(color: Colors.white),
             ),
             backgroundColor: Colors.red,
@@ -49,18 +88,17 @@ class _AppFeedbackState extends State<AppFeedback> {
         return;
       }
 
-      await supabase.from('tbl_feedback').insert({
+      await supabase.from('tbl_complaint').insert({
         'student_id': supabase.auth.currentUser!.id,
-        'title': _titleController.text,
-        'description': _descriptionController.text,
-        'rating': _rating,
+        'complaint_title': _titleController.text,
+        'complaint_content': _contentController.text,
         'created_at': DateTime.now().toIso8601String(),
       });
 
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            "Feedback Submitted Successfully",
+            "Complaint Submitted Successfully",
             style: TextStyle(color: Colors.white),
           ),
           backgroundColor: Colors.green,
@@ -69,11 +107,13 @@ class _AppFeedbackState extends State<AppFeedback> {
 
       setState(() {
         _titleController.clear();
-        _descriptionController.clear();
-        _rating = 3.0;
+        _contentController.clear();
       });
+
+      // Refresh the complaints list after submission
+      await _fetchComplaints();
     } catch (e) {
-      print("ERROR SUBMITTING FEEDBACK: $e");
+      print("ERROR SUBMITTING COMPLAINT: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -93,7 +133,7 @@ class _AppFeedbackState extends State<AppFeedback> {
   @override
   void dispose() {
     _titleController.dispose();
-    _descriptionController.dispose();
+    _contentController.dispose();
     super.dispose();
   }
 
@@ -109,7 +149,7 @@ class _AppFeedbackState extends State<AppFeedback> {
               const SizedBox(height: 24),
               Center(
                 child: Text(
-                  "Share Your Feedback",
+                  "Submit a Complaint",
                   style: TextStyle(
                     fontSize: 24,
                     fontWeight: FontWeight.w600,
@@ -125,7 +165,7 @@ class _AppFeedbackState extends State<AppFeedback> {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(8),
                   image: const DecorationImage(
-                    image: AssetImage('assets/feedback.jpg'),
+                    image: AssetImage('assets/complaint.jpg'),
                     fit: BoxFit.cover,
                   ),
                   border: Border.all(color: Colors.grey[300]!, width: 1),
@@ -145,7 +185,7 @@ class _AppFeedbackState extends State<AppFeedback> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Feedback Form",
+                        "Complaint Form",
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -156,7 +196,7 @@ class _AppFeedbackState extends State<AppFeedback> {
                       TextField(
                         controller: _titleController,
                         decoration: InputDecoration(
-                          labelText: "Feedback Title",
+                          labelText: "Complaint Title",
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -173,9 +213,9 @@ class _AppFeedbackState extends State<AppFeedback> {
                       ),
                       const SizedBox(height: 16),
                       TextField(
-                        controller: _descriptionController,
+                        controller: _contentController,
                         decoration: InputDecoration(
-                          labelText: "Description",
+                          labelText: "Complaint Description",
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8),
                             borderSide: BorderSide(color: Colors.grey[300]!),
@@ -191,45 +231,10 @@ class _AppFeedbackState extends State<AppFeedback> {
                         ),
                         maxLines: 4,
                       ),
-                      const SizedBox(height: 16),
-                      Text(
-                        "Rating",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black,
-                        ),
-                      ),
-                      Slider(
-                        value: _rating,
-                        min: 1.0,
-                        max: 5.0,
-                        divisions: 4,
-                        label: _rating.toStringAsFixed(1),
-                        activeColor: Colors.black,
-                        inactiveColor: Colors.grey[300],
-                        onChanged:
-                            _isSubmitting
-                                ? null
-                                : (value) {
-                                  setState(() {
-                                    _rating = value;
-                                  });
-                                },
-                      ),
-                      Center(
-                        child: Text(
-                          "${_rating.toStringAsFixed(1)} Stars",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ),
                       const SizedBox(height: 24),
                       Center(
                         child: ElevatedButton(
-                          onPressed: _isSubmitting ? null : submitFeedback,
+                          onPressed: _isSubmitting ? null : submitComplaint,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: Colors.white,
                             foregroundColor: Colors.black,
@@ -257,7 +262,7 @@ class _AppFeedbackState extends State<AppFeedback> {
                                     ),
                                   )
                                   : const Text(
-                                    "Submit Feedback",
+                                    "Submit Complaint",
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
@@ -267,6 +272,134 @@ class _AppFeedbackState extends State<AppFeedback> {
                       ),
                     ],
                   ),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Complaints List Section
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Your Complaints",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w600,
+                        color: Colors.black,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    _isLoadingComplaints
+                        ? const Center(child: CircularProgressIndicator())
+                        : _errorMessage != null
+                        ? Center(child: Text(_errorMessage!))
+                        : _complaints.isEmpty
+                        ? const Center(
+                          child: Text(
+                            "No complaints submitted yet.",
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                          ),
+                        )
+                        : ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: _complaints.length,
+                          separatorBuilder:
+                              (context, index) => const SizedBox(height: 16),
+                          itemBuilder: (context, index) {
+                            final complaint = _complaints[index];
+                            return Card(
+                              elevation: 2,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(16),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      complaint['complaint_title'] ??
+                                          'No Title',
+                                      style: const TextStyle(
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      complaint['complaint_content'] ??
+                                          'No Description',
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    // const SizedBox(height: 8),
+                                    // Row(
+                                    //   children: [
+                                    //     const Text(
+                                    //       "Status: ",
+                                    //       style: TextStyle(
+                                    //         fontSize: 14,
+                                    //         fontWeight: FontWeight.w500,
+                                    //       ),
+                                    //     ),
+                                    //     Text(
+                                    //       complaint['complaint_status'] == 0
+                                    //           ? 'Open'
+                                    //           : 'Closed',
+                                    //       style: TextStyle(
+                                    //         fontSize: 14,
+                                    //         color:
+                                    //             complaint['complaint_status'] ==
+                                    //                     0
+                                    //                 ? Colors.orange
+                                    //                 : Colors.green,
+                                    //       ),
+                                    //     ),
+                                    //   ],
+                                    // ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        const Text(
+                                          "Reply: ",
+                                          style: TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                        Expanded(
+                                          child: Text(
+                                            complaint['complaint_reply'] !=
+                                                        null &&
+                                                    complaint['complaint_reply']
+                                                        .isNotEmpty
+                                                ? complaint['complaint_reply']
+                                                : 'Not Replied',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color:
+                                                  complaint['complaint_reply'] !=
+                                                              null &&
+                                                          complaint['complaint_reply']
+                                                              .isNotEmpty
+                                                      ? Colors.black
+                                                      : Colors.red,
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                  ],
                 ),
               ),
               const SizedBox(height: 24),

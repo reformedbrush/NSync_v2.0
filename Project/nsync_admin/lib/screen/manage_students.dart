@@ -819,12 +819,12 @@ class _ManageStudentsState extends State<ManageStudents>
                                 ),
                                 DataCell(
                                   Text(
-                                    student['student_status'] == -1
+                                    student['student_status'] == 0
                                         ? 'Blocked'
                                         : 'Active',
                                     style: TextStyle(
                                       color:
-                                          student['student_status'] == -1
+                                          student['student_status'] == 0
                                               ? Colors.red
                                               : Colors.green,
                                     ),
@@ -875,7 +875,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                                     TextButton(
                                                       onPressed: () {
                                                         if (student['student_status'] ==
-                                                            -1) {
+                                                            0) {
                                                           unblockStudent(
                                                             student['student_id']
                                                                 .toString(),
@@ -892,7 +892,7 @@ class _ManageStudentsState extends State<ManageStudents>
                                                       },
                                                       child: Text(
                                                         student['student_status'] ==
-                                                                -1
+                                                                0
                                                             ? "Unblock"
                                                             : "Block",
                                                       ),
